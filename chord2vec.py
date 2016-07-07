@@ -15,7 +15,7 @@ import cPickle
 import tensorflow as tf
 from tensorflow.models.rnn import rnn_cell, seq2seq
 
-def read_data(file_name, context_size):
+def read_data(file_name='Piano-midi.de.pickle', context_size=2):
 	""""Load pickled piano-roll file from file_name and build
 		(inputs, targets) pairs
 
@@ -28,7 +28,7 @@ def read_data(file_name, context_size):
 			list of corresponding context chords 
 
 	"""
-	dataset = cPickle.load(file('Piano-midi.de.pickle'))
+	dataset = cPickle.load(file(file_name))
 	training_data = dataset['train']
 
 	def get_contexts(chords_seq):
@@ -40,7 +40,7 @@ def read_data(file_name, context_size):
 		m_after = context_size
 		size = len(chords_seq)
 		
-		for i in size:
+		for i in range(size):
 			# the neighborhood of chords at the beginning or at the end of a sequence is smaller
 			if i < m_before:
 				m_before = i
@@ -73,6 +73,14 @@ def read_data(file_name, context_size):
 
 def create_model():
 	# TODO
+	return 0
 
 def train():
 	# TODO
+	return 0
+
+def main(_):
+   train()
+
+if __name__ == "__main__":
+  tf.app.run()
