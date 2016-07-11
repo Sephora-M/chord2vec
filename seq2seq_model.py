@@ -74,4 +74,8 @@ class SimpleSeq2SeqModel:
 		"""
 		# TODO
 
+		sess.run(tf.initialize_all_variables())
+
+		
+
 
