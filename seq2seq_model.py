@@ -191,7 +191,7 @@ class SimpleSeq2SeqModel:
 				decoder_pad_size = decoder_size - len(decoder_input) - 1
 				decoders_input.append([data_utils.GO_ID] + decoder_input +
 	                            [data_utils.PAD_ID] * decoder_pad_size)
-				all_decoders_inputs.append(decoders_input)
+			all_decoders_inputs.append(decoders_input)
 
 		# Now we create batch-major vectors from the data selected above.
 		batch_encoder_inputs, batch_all_decoders_inputs, batch_all_weights = [], [], []
@@ -202,33 +202,32 @@ class SimpleSeq2SeqModel:
 				np.array([encoder_inputs[batch_idx][length_idx]
 	                    for batch_idx in xrange(self.batch_size)], dtype=np.int32))
 
+		def get_one_decoder_inputs(column, decoders_list):
+			return map(list,zip(*map(list, zip(*decoders_list))[column:column+1]))
+
 		# Batch decoder inputs are re-indexed decoder_inputs, we create weights.
-		
-		"""TODOOOOO for decoder_inputs in all_decoders_inputs
-		"""
-		for decoder_inputs in all_decoders_inputs:
+		for column in xrange(num_decoders):
 			batch_decoder_inputs, batch_weights = [], []
+			decoder_inputs = get_one_decoder_inputs(column,all_decoders_inputs)
+			
 			for length_idx in xrange(decoder_size):
 				batch_decoder_inputs.append(
-		          np.array([decoder_inputs[batch_idx][length_idx]
-		                    for batch_idx in xrange(self.batch_size)], dtype=np.int32))
-
-		      # Create target_weights to be 0 for targets that are padding.
+	          	np.array([decoder_inputs[batch_idx][0][length_idx]
+	                    	for batch_idx in xrange(self.batch_size)], dtype=np.int32))
+				
+				 # Create target_weights to be 0 for targets that are padding.
 				batch_weight = np.ones(self.batch_size, dtype=np.float32)
 				for batch_idx in xrange(self.batch_size):
 					# We set weight to 0 if the corresponding target is a PAD symbol.
 					# The corresponding target is decoder_input shifted by 1 forward.
 					if length_idx < decoder_size - 1:
-						target = decoder_inputs[batch_idx][length_idx + 1]
+						target = decoder_inputs[batch_idx][0][length_idx + 1]
 					if length_idx == decoder_size - 1 or target == data_utils.PAD_ID:
 						batch_weight[batch_idx] = 0.0
 				batch_weights.append(batch_weight)
 
-			batch_all_weights.append(batch_weights)
-			batch_all_decoders_inputs(batch_decoder_inputs)
-			print(batch_all_decoders_inputs)
-			print("------")
-			print(batch_all_weights)
 
-		return batch_encoder_inputs, batch_all_decoder_inputs, batch_all_weights
+			batch_all_decoders_inputs.append(batch_decoder_inputs)
+			batch_all_weights.append(batch_weights)
+		return batch_encoder_inputs, batch_all_decoders_inputs, batch_all_weights
 
