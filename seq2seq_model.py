@@ -76,7 +76,7 @@ class SimpleSeq2SeqModel:
 		single_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units, state_is_tuple=True)
 		cell = single_cell
 		if num_layers > 1:
-			cell = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers)
+			cell = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers,state_is_tuple=True)
 		
 
 	
@@ -180,8 +180,7 @@ class SimpleSeq2SeqModel:
 	    # Get a random batch of encoder and decoder inputs from data,
 	    # pad them if needed, reverse encoder inputs and add GO to decoder.
 		for _ in xrange(self.batch_size):
-			encoder_input, decoders_inputs = random.choice(data[bucket_id])
-
+			encoder_input, decoders_inputs = random.choice(data[bucket_id]) 
 			# Encoder inputs are padded and then reversed.
 			encoder_pad = [data_utils.PAD_ID] * (encoder_size - len(encoder_input))
 			encoder_inputs.append(list(reversed(encoder_input + encoder_pad)))

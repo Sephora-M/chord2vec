@@ -269,4 +269,4 @@ def model_with_buckets(encoder_inputs, num_decoders, all_decoders_inputs, all_ta
 					losses.append(sequences_loss(
 						outputs[-1], bucket_targets, bucket_weights,num_decoders,
 						softmax_loss_function=softmax_loss_function))
-	return outputs, losses
+	return outputs[0], losses
