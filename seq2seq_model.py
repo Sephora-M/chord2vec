@@ -73,7 +73,7 @@ class SimpleSeq2SeqModel:
 
 
 		# Create the internal multi-layer cell for the RNN.
-		single_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units)
+		single_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units, state_is_tuple=True)
 		cell = single_cell
 		if num_layers > 1:
 			cell = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers)
@@ -103,13 +103,13 @@ class SimpleSeq2SeqModel:
 		self.saver = tf.train.Saver(tf.all_variables())
 
 
-	def step(self, session, encoder_inputs, decoder_inputs, target_weights,
+	def step(self, session, encoder_inputs, num_decoders, decoder_inputs, target_weights,
 		bucket_id, forward_only=False):
 		"""Run a step of the model feeding the given inputs. 
 			Args:
 				session: tensorflow session to use.
 				encoder_inputs: list of numpy int vectors to feed as encoder inputs.
-				decoder_inputs: list of numpy int vectorss to feed as decoder inputs.
+				decoder_inputs: list of numpy int vectors to feed as decoder inputs.
 				forward_only: whether to do the backward step or only forward, 
 				defaut=False
 
@@ -125,7 +125,7 @@ class SimpleSeq2SeqModel:
 		if len(decoder_inputs[0]) != decoder_size:
 			raise ValueError("Decoder length must be equal to the one in bucket,"
                        " %d != %d." % (len(decoder_inputs), decoder_size))
-		if len(target_weights) != decoder_size:
+		if len(target_weights[0]) != decoder_size:
 			raise ValueError("Weights length must be equal to the one in bucket,"
                        " %d != %d." % (len(target_weights), decoder_size))
 		
@@ -133,13 +133,14 @@ class SimpleSeq2SeqModel:
 		feed_dict = {}
 		for l in xrange(encoder_size):
 			feed_dict[self.encoder_inputs[l].name] = encoder_inputs[l]
-		for l in xrange(decoder_size):
-			feed_dict[self.decoder_inputs[l].name] = decoder_inputs[l]
-			feed_dict[self.target_weights[l].name] = target_weights[l]
-
-		# Since our targets are decoder inputs shifted by one, we need one more.
-		last_target = self.decoder_inputs[decoder_size].name
-		feed_dict[last_target] = np.zeros([self.batch_size], dtype=np.int32)
+		for m in xrange(num_decoders):	
+			for l in xrange(decoder_size):
+				feed_dict[self.all_decoder_inputs[m][l].name] = decoder_inputs[m][l]
+				feed_dict[self.all_targets_weights[m][l].name] = target_weights[m][l]
+			# Since our targets are decoder inputs shifted by one, we need one more.
+			last_target = self.all_decoder_inputs[m][decoder_size].name
+			feed_dict[last_target] = np.zeros([self.batch_size], dtype=np.int32)
+		
 		if not forward_only:
 			output_feed = [self.updates[bucket_id],  # Update Op that does SGD.
                      self.gradient_norms[bucket_id],  # Gradient norm.
