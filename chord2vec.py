@@ -98,13 +98,17 @@ def self_test():
     sess.run(tf.initialize_all_variables())
 
     # Fake data set for both the (3, 3) and (6, 6) bucket.
-    data_set = ([([1, 1], [[2, 2], [1,2]]), ([3, 3], [[4],[4]]), ([5], [[6],[5]])],
-                [([1, 1, 1, 1, 1], [[2, 2, 2, 2, 2],[2, 2, 2, 3, 3]]), ([3, 3, 3], [[5, 6],[7,6]])])
+
+    data_set = ([([1, 1], [[2, 2],[4,4]]), ([3, 3], [[4],[5]]), ([5], [[6],[6]])],
+                [([1, 1, 1, 1, 1], [[2, 2, 2, 2, 2],[3,3,3,3,3]]), ([3, 3, 3], [[5, 6],[6,7]] )])
+
+    num_decoders=2 
+    
     for _ in xrange(5):  # Train the fake model for 5 steps.
       bucket_id = random.choice([0, 1])
       encoder_inputs, decoder_inputs, target_weights = model.get_batch(
           data_set, 2,bucket_id)
-      model.step(sess, encoder_inputs, decoder_inputs, target_weights,
+      model.step(sess, encoder_inputs, num_decoders, decoder_inputs, target_weights,
                  bucket_id, False)
 
 def main(_):
