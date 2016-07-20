@@ -26,11 +26,11 @@ tf.app.flags.DEFINE_integer("num_units", 512, "Size of each model layer.")
 tf.app.flags.DEFINE_integer("num_layers", 3, "Number of layers in the model.")
 tf.app.flags.DEFINE_integer("notes_range", 200, "Number of notes in the vocabulary.")
 tf.app.flags.DEFINE_integer("num_decoders", 2,"Number of decoders, i.e. number of context chords")
-tf.app.flags.DEFINE_string("data_dir", "/tmp", "Data directory")
-tf.app.flags.DEFINE_string("train_dir", "/tmp", "Training directory.")
+tf.app.flags.DEFINE_string("data_dir", "save_network", "Data directory")
+tf.app.flags.DEFINE_string("train_dir", "save_network", "Training directory.")
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
-tf.app.flags.DEFINE_integer("steps_per_checkpoint", 20,
+tf.app.flags.DEFINE_integer("steps_per_checkpoint", 100,
                             "How many training steps to do per checkpoint.")
 tf.app.flags.DEFINE_boolean("decode", False,
                             "Set to True for interactive decoding.")
@@ -39,9 +39,9 @@ tf.app.flags.DEFINE_boolean("self_test", False,
 
 FLAGS = tf.app.flags.FLAGS
 
-_buckets = [(12,12)]
+_buckets = [(4,4)]
 
-def read_data(file_name='Piano-midi.de.pickle', context_size=1, training_data=True):
+def read_data(file_name='JSB_Chorales.pickle', context_size=1, training_data=True):
 	""""Load pickled piano-roll file from file_name and build
 		(inputs, targets) pairs
 
@@ -57,7 +57,8 @@ def read_data(file_name='Piano-midi.de.pickle', context_size=1, training_data=Tr
 	"""
 	dataset = cPickle.load(file(file_name))
 	train_data = dataset['train']
-	test_data = dataset['test']
+	##
+	valid_data = dataset['valid']
  
 	def get_contexts(chords_seq):
 		"""Gives the context of each chord in the list chords_seq
@@ -84,13 +85,13 @@ def read_data(file_name='Piano-midi.de.pickle', context_size=1, training_data=Tr
 			for j in range(empty_before):
 					neighborhood.append([])
 			if(m_before > 0):
-				neighborhood.extend(chords_seq[(i-m_before):i])
+				neighborhood.extend(map(list, chords_seq[(i-m_before):i]))
 			if(m_after > 0):
-				neighborhood.extend(chords_seq[(i+1):(i+m_after+1)]) 
+				neighborhood.extend(map(list, chords_seq[(i+1):(i+m_after+1)])) 
 			for j in range(empty_after):
 					neighborhood.append([])
 
-			chord_and_context.append((chords_seq[i],neighborhood))
+			chord_and_context.append((list(chords_seq[i]),neighborhood))
 
 			m_before = context_size
 			m_after = context_size	
@@ -104,12 +105,12 @@ def read_data(file_name='Piano-midi.de.pickle', context_size=1, training_data=Tr
 	if training_data:
 		data = train_data
 	else:
-		data = test_data
+		data = valid_data
 
 	for seq in data:
-		chords_and_contexts.append(get_contexts(seq))
+		chords_and_contexts.extend(get_contexts(seq))
 
-	return chords_and_contexts
+	return [chords_and_contexts]
 
 def get_max_seqLength(chords):
 	max_len = 0
@@ -122,7 +123,7 @@ def get_max_seqLength(chords):
 
 def create_model(session):
 	"""Create the model or load parameters in session """
-	model = seq2seq_model.SimpleSeq2SeqModel(FLAGS.notes_range, _buckets, FLAGS.num_units, 
+	model = seq2seq_model.Seq2SeqsModel(FLAGS.notes_range, _buckets, FLAGS.num_units, 
 		FLAGS.num_layers, FLAGS.max_gradient_norm,FLAGS.num_decoders,FLAGS.batch_size, FLAGS.learning_rate,
 		FLAGS.learning_rate_decay_factor)
 
@@ -144,7 +145,7 @@ def train():
 		model = create_model(sess)
 		
 		print("Reading test and raining data." )
-		test_set = read_data(training_data=False)
+		valid_set = read_data(training_data=False)
 		train_set = read_data(training_data=True)
 		train_bucket_sizes = [len(train_set[b]) for b in xrange(len(_buckets))]
 		train_total_size = float(sum(train_bucket_sizes))
@@ -181,16 +182,16 @@ def train():
 				
 				previous_losses.append(loss)
 				# Save checkpoint and zero timer and loss.
-				checkpoint_path = os.path.join(FLAGS.train_dir, "chords2vec.ckpt")
+				checkpoint_path =  FLAGS.train_dir + "/chords2vec.ckpt"
 				model.saver.save(sess, checkpoint_path, global_step=model.global_step)
 				step_time, loss = 0.0, 0.0
 				# Run evals on development set and print their perplexity.
 				for bucket_id in xrange(len(_buckets)):
-					if len(test_set[bucket_id]) == 0:
+					if len(valid_set[bucket_id]) == 0:
 						print("  eval: empty bucket %d" % (bucket_id))
 						continue
 					encoder_inputs, decoder_inputs, target_weights = model.get_batch(
-						test_set,FLAGS.num_decoders, bucket_id)
+						valid_set,FLAGS.num_decoders, bucket_id)
 					_, eval_loss, _ = model.step(sess, encoder_inputs,FLAGS.num_decoders, 
 						decoder_inputs, target_weights, bucket_id, True)
 					eval_ppx = math.exp(eval_loss) if eval_loss < 300 else float('inf')
@@ -202,7 +203,7 @@ def self_test():
   with tf.Session() as sess:
     print("Self-test for sequence-to-sequences model.")
     # Create model with vocabularies of 10, 2 small buckets, 2 layers of 32.
-    model = seq2seq_model.SimpleSeq2SeqModel(88,[(3, 3), (6, 6)], 32, 2,
+    model = seq2seq_model.Seq2SeqsModel(88,[(3, 3), (6, 6)], 32, 2,
                                        5.0,2, 32, 0.3, 0.99)
     sess.run(tf.initialize_all_variables())
 
@@ -222,6 +223,7 @@ def self_test():
 
 def main(_):
    self_test()
+
 
 if __name__ == "__main__":
   tf.app.run()

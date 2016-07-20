@@ -17,7 +17,7 @@ import tensorflow as tf
 from tensorflow.models.rnn.translate import data_utils
 
 
-class SimpleSeq2SeqModel:
+class Seq2SeqsModel:
 	"""A simple sequence-to-sequence model. It implements a 
 	(multi-layer) RNN encoder followed by a (multi-layer) 
 	RNN  decoder. Encoder and decoder use the same RNN cell type,
