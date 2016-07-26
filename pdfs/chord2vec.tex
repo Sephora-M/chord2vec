@@ -3,16 +3,14 @@
 \title{Learning Chords Embeddings}
 \author{Sephora Madjiheurem}
 \usepackage[numbers]{natbib}
-\usepackage{amsmath,amssymb,amsthm,amsfonts,graphics,subfigure,graphicx,enumerate} 
+\usepackage{amsmath,amssymb,amsthm,amsfonts,graphics,subfigure,graphicx,enumerate,bbm} 
 
-
-\renewcommand{\qedsymbol}{\ensuremath{\blacksquare}}
-\newcommand{\N}{\mathbb{N}}
-\newcommand{\Z}{\mathbb{Z}}
-\newcommand{\Q}{\mathbb{Q}}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\C}{\mathbb{C}} 
 \newcommand{\T}{\mathcal{T}}
+\newcommand{\boldc}{\boldsymbol c}
+\newcommand{\boldd}{\boldsymbol d}
+\newcommand{\boldm}{\boldsymbol m}
 \DeclareMathOperator*{\argmin}{argmin}
 
 
@@ -26,7 +24,7 @@ The skip-gram allows to efficiently learn high-quality distributed vector repres
 
 
 We define a text as a sequence of words drawn from a finite vocabulary of size $W$. A word can be described as a ``one-hot'' vector $w_t \in \{0,1\}^W$, where exactly one entry is non-zero and the subscript $t$ represent the position of the word in the text.  
-Given a  word $w_t$ in a text, define the context of word $w_t$ by $ C(w_t) = \{w_{t+j}, -m \leq j \leq m , j \neq 0\}$, where $m$ is the size of the context. We consider the conditional probability of a context given a word  $p(w_{t+j}|w_t)$.  The goal is to find word representations that are useful for predicting the surrounding words in a sentence. Formally, given a corpus of words of size $T$ and the context of word $w_t$ given by $C(w_t)$, the objective of the skip-gram model is to maximize the average log probability 
+Given a  word $w_t$ in a text, define the context of word $w_t$ by $ C(w_t) = \{w_{t+j}, -m \leq j \leq m , j \neq 0\}$, where $m$ is the size of the context. We consider the conditional probability of a context given a word  $p(w_{t+j}|w_t)$.  The goal is to find word representations that are useful for predicting the surrounding words in a sentence. Formally, given a corpus of words of size $T$ and the context of word $w_t$ given by $C(w_t)$, the objective of the skip-gram model is to maximize the average log probability. 
 \begin{equation}
 \frac{1}{T} \sum_{t=1}^T \sum_{w \in C(w_t)} \log p(w|w_t)\,.
 \label{eq:objective}
@@ -52,7 +50,7 @@ Because the computation cost of objective~(\ref{eq:objective}) is proportional t
 
 
 \subsection{Chord2Vec}
-Similarly to a text, we define a piece of music as a series of chords. A chord is a subset of notes drawn from a finite set of size $N$ and can be represented by a binary vector $c \in \{0,1\}^N$.\\
+Similarly to a text, we define a piece of music as a series of chords. A chord is a subset of notes drawn from a finite set of size $N$ and can be represented by a binary vector $\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N$.\\
 
 \noindent To adapt the skip-gram model to music data there are a few points that need to be considered:
 
@@ -62,11 +60,20 @@ Similarly to a text, we define a piece of music as a series of chords. A chord i
 \end{enumerate}
  
 
-The first point implies that the softmax layer in the original skip-gram model is no longer appropriate, as we need to allow more than one note to be active in a chord. A naive adaptation is to use a separate sigmoid function to predict each note in a chord. This makes the independence assumption between the notes in a context chord.
-Under this model, the posterior distribution of a context chord $c_{t+j}$ given a chord $c_t$ is given by: 
+A naive adaptation is to use a separate sigmoid function at the output layer to predict each note in a chord. This makes the conditional independence assumption between the notes in a context chord $\boldc$ given a chord $\boldd$ , i.e \begin{equation}
+p(\boldc | \boldd) = \prod_{n=1}^N  p(c_n |  \boldd) \,.
+\end{equation} 
+
+Using the weight matrix $M \in \R^{D \times N}$, we can compute a score for each note $c_i$ in a chord:
 
 \begin{equation}
-p(c_{t+j}|c_t) = \prod_{n=1}^N \frac{1}{1 + \exp(-v_{c_{t+j}}^T v_{c_t})} \,\,\,,
+h(i,\boldd) = M_{(:,i)}^T \frac{M \boldd}{\mathbbm{1}^T \boldd} \,,
+\end{equation}
+
+where $M_{(:,i)}$ denotes the $i$'th row of $M$ and $\mathbbm{1}$ is the vector of all 1's of size $N$. 
+
+\begin{equation}
+p(c|d) = \prod_{n=1}^N \frac{1}{1 + \exp(-v_{c_{t+j}}^T v_{c_t})} \,\,\,,
 \end{equation}
 
 where $-m \leq j \leq m, j\neq 0$, $m$ is the size of the training context, $N$ is the number of different notes and  $v_c$ is the vector representation for chord $c$. \\
@@ -128,7 +135,7 @@ Where $W$ is the size of the corpus of chords in the training data.
 
 
 \subsection{Chord-to-chords}
-An alternative to estimating the probability of  single context chord is to estimate the probability of the entire neighborhood 
+An alternative to estimating the probability of single context chord is to estimate the probability of the entire neighborhood 
 $
 p(C(c_t) | c_t)\,,
 $
