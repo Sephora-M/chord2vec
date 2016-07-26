@@ -331,11 +331,11 @@ def train(multiple_decoders = False):
 				print("  eval: empty bucket %d" % (bucket_id))
 				continue
 			test_loss, test_ppx = _get_batch_make_step(sess,model, multiple_decoders, 
-				test_set, FLAGS.num_decoders, bucket_id, True)
+				test_set, FLAGS.num_decoders, bucket_id, True, test=True)
 			print("		test: loss %.4f  perplexity %.4f " % (test_loss, test_ppx) )
 
 
-def _get_batch_make_step(sess,model, multiple_decoders, data_set, num_decoders,bucket_id,forward_only):
+def _get_batch_make_step(sess,model, multiple_decoders, data_set, num_decoders,bucket_id,forward_only,test=False):
 	if multiple_decoders:
 		encoder_inputs, decoder_inputs, target_weights = model.get_batch(
 							data_set,num_decoders, bucket_id)
