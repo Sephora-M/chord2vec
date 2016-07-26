@@ -9,7 +9,6 @@ import sys
 import time
 import numpy as np
 
-import cPickle
 import seq2seqs 
 
 import tensorflow as tf

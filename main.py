@@ -206,7 +206,7 @@ def _get_max_seqLength(chords):
 
 def create_seq2seqs_model(session,forward_only):
 	"""Create the model or load parameters in session """
-	model = seq2seqs_model.Seq2SeqsModel(FLAGS.notes_range, _buckets, FLAGS.num_units, 
+	model = Seq2SeqsModel(FLAGS.notes_range, _buckets, FLAGS.num_units, 
 		FLAGS.num_layers, FLAGS.max_gradient_norm,FLAGS.num_decoders,FLAGS.batch_size, FLAGS.learning_rate,
 		FLAGS.learning_rate_decay_factor)
 
@@ -222,7 +222,7 @@ def create_seq2seqs_model(session,forward_only):
 
 def create_seq2seq_model(session,forward_only):
 	"""Create the model or load parameters in session """
-	model = seq2seq_model.Seq2SeqModel(FLAGS.notes_range,FLAGS.notes_range, _buckets, FLAGS.num_units, 
+	model = Seq2SeqModel(FLAGS.notes_range,FLAGS.notes_range, _buckets, FLAGS.num_units, 
 		FLAGS.num_layers, FLAGS.max_gradient_norm,FLAGS.batch_size, FLAGS.learning_rate,
 		FLAGS.learning_rate_decay_factor,forward_only=forward_only)
 
@@ -373,7 +373,7 @@ def self_test():
                  bucket_id, False)
 
 def main(_):
-   self_test()
+   train()
 
 
 if __name__ == "__main__":
