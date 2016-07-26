@@ -35,7 +35,7 @@ tf.app.flags.DEFINE_string("data_dir", "save_network", "Data directory")
 tf.app.flags.DEFINE_string("train_dir", "save_network", "Training directory.")
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
-tf.app.flags.DEFINE_integer("steps_per_checkpoint", 50,
+tf.app.flags.DEFINE_integer("steps_per_checkpoint", 1,
                             "How many training steps to do per checkpoint.")
 tf.app.flags.DEFINE_boolean("decode", False,
                             "Set to True for interactive decoding.")
@@ -320,29 +320,44 @@ def train(multiple_decoders = False):
 					else:
 						consecutive_loss_increase=0
 				# Test if overfitting : if the evaluation loss kept increasing the past 6  evaluation steps.	
-				if consecutive_loss_increase > 6:
+				if consecutive_loss_increase > 0:
 					stop_training = True 
 				sys.stdout.flush()
 		# Print testing error:
 		print("END of training")
 		print("Model evaluation on test data...")
 		for bucket_id in xrange(len(_buckets)):
-			if len(valid_set[bucket_id]) == 0:
-				print("  eval: empty bucket %d" % (bucket_id))
-				continue
-			test_loss, test_ppx = _get_batch_make_step(sess,model, multiple_decoders, 
-				test_set, FLAGS.num_decoders, bucket_id, True, test=True)
-			print("		test: loss %.4f  perplexity %.4f " % (test_loss, test_ppx) )
+			num_batches = len(test_set[bucket_id])/FLAGS.batch_size
+			total_test_loss, total_test_ppx = 0.0,0.0
+
+			for batch_id in xrange(num_batches):
+				if len(valid_set[bucket_id]) == 0:
+					print("  eval: empty bucket %d" % (bucket_id))
+					continue
+				test_loss, test_ppx = _get_batch_make_step(sess,model, multiple_decoders, 
+					test_set, FLAGS.num_decoders, bucket_id, True, test=True,batch_id=(1+batch_id))
+				total_test_loss += test_loss
+				total_test_ppx += test_ppx
+			print("		test: loss %.4f  perplexity %.4f " % (total_test_loss/num_batches, total_test_ppx/num_batches))
 
 
-def _get_batch_make_step(sess,model, multiple_decoders, data_set, num_decoders,bucket_id,forward_only,test=False):
+def _get_batch_make_step(sess,model, multiple_decoders, data_set, num_decoders,bucket_id,forward_only,test=False,batch_id=0):
 	if multiple_decoders:
-		encoder_inputs, decoder_inputs, target_weights = model.get_batch(
+		if test:
+			encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
+							data_set,num_decoders, bucket_id,batch_id)
+		else:
+			encoder_inputs, decoder_inputs, target_weights = model.get_batch(
 							data_set,num_decoders, bucket_id)
+
 		_, loss, _ = model.step(sess, encoder_inputs,num_decoders, 
 							decoder_inputs, target_weights, bucket_id, forward_only)
 	else:
-		encoder_inputs, decoder_inputs, target_weights = model.get_batch(
+		if test:
+			encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
+							data_set, bucket_id,batch_id)
+		else:
+			encoder_inputs, decoder_inputs, target_weights = model.get_batch(
 							data_set, bucket_id)
 		_, loss, _ = model.step(sess, encoder_inputs, 
 							decoder_inputs, target_weights, bucket_id, forward_only)
