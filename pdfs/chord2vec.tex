@@ -20,14 +20,13 @@
 \section{Linear Model}
 \subsection{Skip-gram Model: Recap}
 
-The skip-gram allows to efficiently learn high-quality distributed vector representations that capture precise syntactic and semantic word relationships \citep{mik2013}. We give here a short reminder of how the skip-gram model works. \\
-
+The skip-gram allows to efficiently learn high-quality distributed vector representations that capture precise syntactic and semantic word relationships \citep{mik2013}. We give here a short reminder of how the skip-gram model works.
 
 We define a text as a sequence of words drawn from a finite vocabulary of size $W$. A word can be described as a ``one-hot'' vector $w_t \in \{0,1\}^W$, where exactly one entry is non-zero and the subscript $t$ represent the position of the word in the text.  
 Given a  word $w_t$ in a text, define the context of word $w_t$ by $ C(w_t) = \{w_{t+j}, -m \leq j \leq m , j \neq 0\}$, where $m$ is the size of the context. We consider the conditional probability of a context given a word  $p(w_{t+j}|w_t)$.  The goal is to find word representations that are useful for predicting the surrounding words in a sentence. Formally, given a corpus of words of size $T$ and the context of word $w_t$ given by $C(w_t)$, the objective of the skip-gram model is to maximize the average log probability. 
 \begin{equation}
 \frac{1}{T} \sum_{t=1}^T \sum_{w \in C(w_t)} \log p(w|w_t)\,.
-\label{eq:objective}
+\label{eq:skipgram_obj}
 \end{equation}
 
 The parametrization of the skip-gram model uses the architecture depicted in Figure~\ref{fig:skipgram} (from \citet{mik2013}). In this model, each output is computed using softmax to obtain the posterior distribution of context words:
@@ -36,11 +35,11 @@ The parametrization of the skip-gram model uses the architecture depicted in Fig
 p(w_{t+j}|w_t) = \frac{ \exp (v_{w_{t+j}}^T v_{w_t})}{\sum_{w=1}^W \exp (v_{w}^T v_{w_t})} \,\,,
 \end{equation}
 
-where $-m \leq j \leq m, j\neq 0$, $m$ is the size of the training context,  $v_w$ is the vector representation for $w$, and $W$ is the number of words in the vocabulary. \\
+where $-m \leq j \leq m, j\neq 0$, $m$ is the size of the training context,  $v_w$ is the vector representation for $w$, and $W$ is the number of words in the vocabulary.
 
 Detailed derivations and explanations of the parameter learning for this original skip-gram model can be found in \citep{Rong14}.
 
-Because the computation cost of objective~(\ref{eq:objective}) is proportional to $W$ which can be very large when working with text training data, \citet{mik2013} use instead an efficient approximation, known as negative sampling (see \citep{NIPS2013_5021} for details). 
+Because the computation cost of objective~(\ref{eq:skipgram_obj}) is proportional to $W$ which can be very large when working with text training data, \citet{mik2013} use instead an efficient approximation, known as negative sampling (see \citep{NIPS2013_5021} for details). 
 
 \begin{figure}[ht]
 \centering
@@ -50,7 +49,7 @@ Because the computation cost of objective~(\ref{eq:objective}) is proportional t
 
 
 \subsection{Chord2Vec}
-Similarly to a text, we define a piece of music as a series of chords. A chord is a subset of notes drawn from a finite set of size $N$ and can be represented by a binary vector $\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N$.\\
+Similarly to a text, we define a piece of music as a series of chords. A chord is a subset of notes drawn from a finite set of size $N$ and can be represented by a binary vector $\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N$.
 
 \noindent To adapt the skip-gram model to music data there are a few points that need to be considered:
 
@@ -61,7 +60,7 @@ Similarly to a text, we define a piece of music as a series of chords. A chord i
  
 
 A naive adaptation is to use a separate sigmoid function at the output layer to predict each note in a chord. This makes the conditional independence assumption between the notes in a context chord $\boldc$ given a chord $\boldd$ , i.e \begin{equation}
-p(\boldc | \boldd) = \prod_{n=1}^N  p(c_n |  \boldd) \,.
+p(\boldc | \boldd) = \prod_{i=1}^N  p(c_i |  \boldd) \,.
 \end{equation} 
 
 Using the weight matrix $M \in \R^{D \times N}$, we can compute a score for each note $c_i$ in a chord:
@@ -72,13 +71,26 @@ h(i,\boldd) = M_{(:,i)}^T \frac{M \boldd}{\mathbbm{1}^T \boldd} \,,
 
 where $M_{(:,i)}$ denotes the $i$'th row of $M$ and $\mathbbm{1}$ is the vector of all 1's of size $N$. 
 
+We then use the sigmoid function to model the conditional probabilities $p(c_i |  \boldd)$:
 \begin{equation}
-p(c|d) = \prod_{n=1}^N \frac{1}{1 + \exp(-v_{c_{t+j}}^T v_{c_t})} \,\,\,,
+\begin{split}
+p(\boldc|\boldd)  &=  \prod_{i=1}^N \sigma\big( (-1)^{c_i+1} h(i,\boldd) \big) \\
+& =  \prod_{i=1}^N \frac{1}{1 + \exp \big(- (-1)^{c_i+1} h(i,\boldd) \big)} \,\,\,.
+\end{split}
 \end{equation}
 
-where $-m \leq j \leq m, j\neq 0$, $m$ is the size of the training context, $N$ is the number of different notes and  $v_c$ is the vector representation for chord $c$. \\
 
-The second point, together with the fact that the computation of the objective is no longer dependent of number of possible context chords (since we are not using softmax, the sum over all possible context chords disappears) suggest that there might not be the need to use efficiency optimizations tricks as negative sampling. 
+The objective of this model is to maximize the average log probability:
+
+\begin{equation}
+\frac{1}{|\T|} \sum_{\boldd \in \T} \sum_{\boldc \in C(\boldd)} \log p(\boldc|\boldd)
+= \frac{1}{|\T|} \sum_{\boldd \in \T} \sum_{\boldc \in C(\boldd)} \sum_{i=1}^N \log p(c_i |  \boldd) \,,
+\label{eq:c2v_obj}
+\end{equation}
+
+Where $\T$ is the training data and $C(\boldd)$ denotes the neighborhood of chord $\boldd$.
+
+%The second point, together with the fact that the computation of the objective is no longer dependent of number of possible context chords (since we are not using softmax, the sum over all possible context chords disappears) suggest that there might not be the need to use efficiency optimizations tricks as negative sampling. 
  
  
 \section{Sequence autoencoding}
@@ -94,7 +106,6 @@ $
 p(y_1,\ldots,y_{T'} | x_1, \ldots, x_T)\,,
 $
 where $x_1, \ldots, x_T$ and  $y_1,\ldots,y_{T'}$ are the input and output sequences respectively, and $T'$ and $T$ need not to be equal. 
-\\
 
 The objective is given by:
 
@@ -105,7 +116,6 @@ The objective is given by:
 
 where $Y$ is a correct output given the input $X$ and $\T$ is the training set and $\theta$ is the set of the model parameters. 
 The encoder and decoder are jointly trained to maximize the objective according to $\theta$.
-\\
 
 The model estimates the conditional probability $p(y_1,\ldots,y_{T'} | x_1, \ldots, x_T)$ by first obtaining the fixed-length vector representation $v$ of the input sequence (given by the last state of the LSTM encoder) and then computing the probability of $y_1,\ldots,y_{T'} $ with the LSTM decoder: 
 
@@ -128,7 +138,7 @@ If $C(c_t)$ denotes the set of chords that are in the neighborhood of the chord 
 
 \begin{equation}
 \max_{\theta}  \frac{1}{W} \sum_{t=1}^{W} \sum_{c\in C(c_t)} \log p(c|c_t,\theta)\,,
-\label{eq:objective}
+\label{eq:c2c_obj}
 \end{equation}
 
 Where $W$ is the size of the corpus of chords in the training data. 
@@ -144,7 +154,7 @@ by combining all context chord in one longer output sequence.
 The corresponding objective is then given by:
 \begin{equation}
 \max_{\theta}  \frac{1}{W} \sum_{t=1}^{W} \log p(C(c_t)|c_t,\theta)\,,
-\label{eq:objective}
+\label{eq:c2cs_obj}
 \end{equation}
 
 
