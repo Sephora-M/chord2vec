@@ -322,7 +322,6 @@ def train():
         while (not stop_training) and model.global_step.eval()/steps_per_epoch < FLAGS.max_epochs:
             # currently using only one bucket of size (max_seq_length, max_seq_length+2).
 
-
             # Get a batch and make a step.
             start_time = time.time()
 
