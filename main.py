@@ -31,6 +31,7 @@ tf.app.flags.DEFINE_integer("num_units", 1024, "Size of each model layer.")
 tf.app.flags.DEFINE_integer("num_layers", 2, "Number of layers in the model.")
 tf.app.flags.DEFINE_integer("notes_range", 109, "Number of notes in the vocabulary.")
 
+tf.app.flags.DEFINE_boolean("attention", True, "Build sequence-to-sequence model with attention mechanism")
 tf.app.flags.DEFINE_boolean("multiple_decoders", False, "Build sequence-to-sequences model")
 tf.app.flags.DEFINE_integer("num_decoders", 2, "Number of decoders, i.e. number of context chords")
 
@@ -280,6 +281,8 @@ def train():
             train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=FLAGS.num_decoders/2, full_context=True)
         else:
             print("Creating sequence-to-sequence ")
+            if FLAGS.attention:
+                print("with attention mechanism")
             print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.num_units))
             model = create_seq2seq_model(sess, False)
             print("Reading test and raining data.")
