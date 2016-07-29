@@ -9,7 +9,7 @@ import sys
 import time
 import numpy as np
 
-import seq2seqs 
+import seq2seqs
 
 import tensorflow as tf
 
@@ -17,7 +17,7 @@ from tensorflow.models.rnn.translate import data_utils
 
 
 class Seq2SeqsModel:
-	"""A sequence-to-sequence model. It implements a 
+	"""A sequence-to-sequence model. It implements a
 	(multi-layer) RNN encoder followed by a (multi-layer) 
 	RNN  decoder. Encoder and decoder use the same RNN cell type,
 	but don't share parameters.
@@ -25,8 +25,8 @@ class Seq2SeqsModel:
 	EDIT: now using buckets
 	"""
 
-	def __init__(self, vocab_size,buckets, num_units, num_layers, 
-		max_gradient_norm, num_decoders, batch_size, 
+	def __init__(self, vocab_size,buckets, num_units, num_layers,
+		max_gradient_norm, num_decoders, batch_size,
 		learning_rate, learning_rate_decay_factor, forward_only=False):
 		"""Create the model
 
@@ -49,21 +49,21 @@ class Seq2SeqsModel:
 		self.encoder_inputs = []
 		self.target_weights = []
 		for i in xrange(buckets[-1][0]):  # Last bucket is the biggest one.
-			self.encoder_inputs.append(tf.placeholder(tf.int32, shape=[None], 
+			self.encoder_inputs.append(tf.placeholder(tf.int32, shape=[None],
 				name="encoder{0}".format(i)))
 
-		self.all_targets_weights = [] 
+		self.all_targets_weights = []
 		self.all_decoder_inputs = []
 		all_targets = []
 		for j in xrange(num_decoders):
 			decoder_inputs = []
 			target_weights = []
 			for i in xrange(buckets[-1][1] + 1):
-				decoder_inputs.append(tf.placeholder(tf.int32, shape=[None], 
+				decoder_inputs.append(tf.placeholder(tf.int32, shape=[None],
 					name="decoder{0}{1}".format(j,i)))
-				target_weights.append(tf.placeholder(tf.float32, shape=[None], 
+				target_weights.append(tf.placeholder(tf.float32, shape=[None],
 					name="weight{0}{1}".format(j,i)))
-			
+
 			# Our targets are decoder inputs shifted by one (remove <GO>).
 			targets = [decoder_inputs[i + 1] for i in xrange(len(decoder_inputs) - 1)]
 			all_targets.append(targets)
@@ -76,18 +76,18 @@ class Seq2SeqsModel:
 		cell = single_cell
 		if num_layers > 1:
 			cell = tf.nn.rnn_cell.MultiRNNCell([single_cell] * num_layers,state_is_tuple=True)
-		
 
-	
-		self.outputs, self.losses = seq2seqs.model_with_buckets(self.encoder_inputs, 
-			num_decoders,self.all_decoder_inputs, all_targets, self.all_targets_weights, 
+
+
+		self.outputs, self.losses = seq2seqs.model_with_buckets(self.encoder_inputs,
+			num_decoders,self.all_decoder_inputs, all_targets, self.all_targets_weights,
 			buckets, lambda x,y: seq2seqs.embedding_rnn_seq2seqs(x,num_decoders,y,cell,
 				num_encoder_symbols=vocab_size, num_decoder_symbols=vocab_size,
 				embedding_size=num_units))
-	
+
 
 		# Gradients and GD update operation for training the model
-		params = tf.trainable_variables() 
+		params = tf.trainable_variables()
 		self.gradient_norms = []
 		self.updates = []
 		optimizer =tf.train.GradientDescentOptimizer(self.learning_rate)
@@ -104,7 +104,7 @@ class Seq2SeqsModel:
 
 	def step(self, session, encoder_inputs, num_decoders, decoder_inputs, target_weights,
 		bucket_id, forward_only=False):
-		"""Run a step of the model feeding the given inputs. 
+		"""Run a step of the model feeding the given inputs.
 			Args:
 				session: tensorflow session to use.
 				encoder_inputs: list of numpy int vectors to feed as encoder inputs.
@@ -113,10 +113,9 @@ class Seq2SeqsModel:
 				defaut=False
 
 			Returns:
-				(gradient norm, output)	
+				(gradient norm, loss, output)
 		"""
-		# TODO
-    	# Check if the sizes match.
+		# TODO  Check if the sizes match.
 		encoder_size, decoder_size = self.buckets[bucket_id]
 		if len(encoder_inputs) != encoder_size:
 			raise ValueError("Encoder length must be equal to the one in bucket,"
@@ -127,19 +126,19 @@ class Seq2SeqsModel:
 		if len(target_weights[0]) != decoder_size:
 			raise ValueError("Weights length must be equal to the one in bucket,"
                        " %d != %d." % (len(target_weights), decoder_size))
-		
+
 
 		feed_dict = {}
 		for l in xrange(encoder_size):
 			feed_dict[self.encoder_inputs[l].name] = encoder_inputs[l]
-		for m in xrange(num_decoders):	
+		for m in xrange(num_decoders):
 			for l in xrange(decoder_size):
 				feed_dict[self.all_decoder_inputs[m][l].name] = decoder_inputs[m][l]
 				feed_dict[self.all_targets_weights[m][l].name] = target_weights[m][l]
 			# Since our targets are decoder inputs shifted by one, we need one more.
 			last_target = self.all_decoder_inputs[m][decoder_size].name
 			feed_dict[last_target] = np.zeros([self.batch_size], dtype=np.int32)
-		
+
 		if not forward_only:
 			output_feed = [self.updates[bucket_id],  # Update Op that does SGD.
                      self.gradient_norms[bucket_id],  # Gradient norm.
@@ -156,7 +155,7 @@ class Seq2SeqsModel:
 			return None, outputs[0], outputs[1:]
 
 
-	def get_batch(self, data, num_decoders, bucket_id):
+	def get_batch(self, data, num_decoders, bucket_id,batch_id):
 		# Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 		"""Get a random batch of data from the specified bucket, prepare for step.
 
@@ -178,8 +177,8 @@ class Seq2SeqsModel:
 
 	    # Get a random batch of encoder and decoder inputs from data,
 	    # pad them if needed, reverse encoder inputs and add GO to decoder.
-		for _ in xrange(self.batch_size):
-			encoder_input, decoders_inputs = random.choice(data[bucket_id]) 
+		for data_point in data[bucket_id][(batch_id*self.batch_size-self.batch_size):(batch_id*self.batch_size)]:
+			encoder_input, decoders_inputs = data_point
 			# Encoder inputs are padded and then reversed.
 			encoder_pad = [data_utils.PAD_ID] * (encoder_size - len(encoder_input))
 			encoder_inputs.append(list(reversed(encoder_input + encoder_pad)))
@@ -208,12 +207,12 @@ class Seq2SeqsModel:
 		for column in xrange(num_decoders):
 			batch_decoder_inputs, batch_weights = [], []
 			decoder_inputs = get_one_decoder_inputs(column,all_decoders_inputs)
-			
+
 			for length_idx in xrange(decoder_size):
 				batch_decoder_inputs.append(
 	          	np.array([decoder_inputs[batch_idx][0][length_idx]
 	                    	for batch_idx in xrange(self.batch_size)], dtype=np.int32))
-				
+
 				 # Create target_weights to be 0 for targets that are padding.
 				batch_weight = np.ones(self.batch_size, dtype=np.float32)
 				for batch_idx in xrange(self.batch_size):
@@ -283,12 +282,12 @@ class Seq2SeqsModel:
 		for column in xrange(num_decoders):
 			batch_decoder_inputs, batch_weights = [], []
 			decoder_inputs = get_one_decoder_inputs(column,all_decoders_inputs)
-			
+
 			for length_idx in xrange(decoder_size):
 				batch_decoder_inputs.append(
 	          	np.array([decoder_inputs[batch_idx][0][length_idx]
 	                    	for batch_idx in xrange(test_size)], dtype=np.int32))
-				
+
 				 # Create target_weights to be 0 for targets that are padding.
 				batch_weight = np.ones(test_size, dtype=np.float32)
 				for batch_idx in xrange(test_size):
