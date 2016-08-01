@@ -8,6 +8,7 @@ import os
 import random
 import sys
 import time
+import datetime
 import numpy as np
 from operator import add
 import copy
@@ -38,14 +39,13 @@ tf.app.flags.DEFINE_integer("num_decoders", 2, "Number of decoders, i.e. number 
 
 tf.app.flags.DEFINE_string("data_file", "JSB_Chorales.pickle", "Data file name")
 
-tf.app.flags.DEFINE_string("data_dir", "unit216layer3", "Data directory")
-tf.app.flags.DEFINE_string("train_dir", "unit216layer3", "Training directory.")
+tf.app.flags.DEFINE_string("train_dir", "unit1024layer2", "Training directory.")
 
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
 tf.app.flags.DEFINE_integer("max_epochs", 50,
                             "Maximium number of epochs for trainig.")
-tf.app.flags.DEFINE_integer("steps_per_checkpoint", 50,
+tf.app.flags.DEFINE_integer("steps_per_checkpoint", 100,
                             "How many training steps to do per checkpoint.")
 tf.app.flags.DEFINE_boolean("decode", False,
                             "Set to True for interactive decoding.")
@@ -239,7 +239,7 @@ def create_seq2seqs_model(session, forward_only):
                           FLAGS.learning_rate,
                           FLAGS.learning_rate_decay_factor)
 
-    checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir + "2")
+    checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
     if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
         print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
         model.saver.restore(session, checkpoint.model_checkpoint_path)
@@ -255,7 +255,7 @@ def create_seq2seq_model(session, forward_only, attention):
                          FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.batch_size, FLAGS.learning_rate,
                          FLAGS.learning_rate_decay_factor, forward_only=forward_only, attention=attention)
 
-    checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir + "1")
+    checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
     if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
         print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
         model.saver.restore(session, checkpoint.model_checkpoint_path)
@@ -268,30 +268,40 @@ def create_seq2seq_model(session, forward_only, attention):
 def train():
     """Train a model
 	Args:
-		multiple_decoders: if true, trian the seq2seqs model, if false train original seq2seq,
+		multiple_decoders: if true, train the seq2seqs model, if false train original seq2seq,
 							default is false
 	"""
 
     with tf.Session() as sess:
         # Create model.
+        checkpoint_path = FLAGS.train_dir + "/chords2vec.ckpt"
+        if not os.path.exists(FLAGS.train_dir):
+            os.makedirs(FLAGS.train_dir)
 
+        result_file = open(FLAGS.train_dir + "/results.txt", 'a+')
+        result_file.write("\n")
+        result_file.write(str(datetime.datetime.now()))
+        result_file.write("\n")
         if FLAGS.multiple_decoders:
+            result_file.write("Creating sequence-to-sequences \n")
             print("Creating sequence-to-sequences ")
             print(" %d layers of %d units with %d decoders." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
             model = create_seq2seqs_model(sess, False)
             print("Reading test and raining data.")
             train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2), full_context=True)
         else:
+            result_file.write("Creating sequence-to-sequences \n")
             print("Creating sequence-to-sequence ")
             if FLAGS.attention:
                 print("with attention mechanism")
+                result_file.write(("with attention mechanism \n"))
             print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.num_units))
             model = create_seq2seq_model(sess, False, FLAGS.attention)
             print("Reading test and raining data.")
             train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2))
 
-        train_bucket_sizes = [len(train_set[b]) for b in xrange(len(_buckets))]
-        train_total_size = float(sum(train_bucket_sizes))
+        result_file.write(
+            " %d layers of %d units  %d context size. \n" % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
 
         # Training loop.
         MAX_STRIKES = 3
@@ -301,25 +311,18 @@ def train():
         current_step  = 0
         current_epoch = divmod(model.global_step.eval(),steps_per_epoch)[0]
         print("number of steps to complete one epoch %d" % steps_per_epoch)
-        previous_losses,previous_train_loss, previous_eval_losses = [],[],[]
+        previous_losses,previous_train_ppx, previous_eval_ppx = [],[],[]
         best_train_loss, best_val_loss = np.inf, np.inf
         strikes = 0
         stop_training = False
 
+        result_file.write(
+            " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
 
         bucket_id = 0
         train_batch_id = 1
         num_valid_batches = int( len(valid_set[bucket_id]) / FLAGS.batch_size)
 
-
-        if FLAGS.multiple_decoders:
-            checkpoint_path = FLAGS.train_dir + "2/chords2vec.ckpt"
-            if not os.path.exists(FLAGS.train_dir + "2"):
-                os.makedirs(FLAGS.train_dir + "2")
-        else:
-            checkpoint_path = FLAGS.train_dir + "1/chords2vec.ckpt"
-            if not os.path.exists(FLAGS.train_dir + "1"):
-                os.makedirs(FLAGS.train_dir + "1")
 
         while (not stop_training) and int(model.global_step.eval()/steps_per_epoch) <= FLAGS.max_epochs:
             # currently using only one bucket of size (max_seq_length, max_seq_length+2).
@@ -344,6 +347,9 @@ def train():
                 print ("global step %d learning rate %.4f step-time %.2f loss %.2f  perplexity %.2f"
                        % (model.global_step.eval(), model.learning_rate.eval(),
                           step_time, ckpt_loss, perplexity))
+                result_file.write("global step %d learning rate %.4f step-time %.2f loss %.2f  perplexity %.2f \n"
+                       % (model.global_step.eval(), model.learning_rate.eval(),
+                          step_time, ckpt_loss, perplexity))
                 # Decrease learning rate if no improvement was seen over last 3 times.
                 if len(previous_losses) > 2 and ckpt_loss > max(previous_losses[-3:]):
                     sess.run(model.learning_rate_decay_op)
@@ -353,10 +359,12 @@ def train():
 
             if model.global_step.eval() % steps_per_epoch == 0:
                 print ("epoch  %d finished" % (current_epoch))
+                result_file.write("epoch  %d finished \n" % (current_epoch))
                 # Run evals on development set and print their perplexity.
                 epoch_perplexity = math.exp(epoch_loss) if ckpt_loss < 300 else float('inf')
-                previous_train_loss.append(epoch_loss)
+                previous_train_ppx.append(epoch_perplexity)
                 print("  avg train batch:  loss %.2f perplexity %.2f" % (epoch_loss, epoch_perplexity))
+                result_file.write("  avg train batch:  loss %.4f perplexity %.4f \n" % (epoch_loss, epoch_perplexity))
                 epoch_loss = 0.0
 
                 for bucket_id in xrange(len(_buckets)):
@@ -370,37 +378,41 @@ def train():
                         avg_valid_loss += valid_loss
                         avg_valid_ppx += valid_ppx
                     print("  eval:  loss %.2f perplexity %.2f" % (avg_valid_loss /num_valid_batches, avg_valid_ppx/num_valid_batches))
+                    result_file.write("  eval:  loss %.4f perplexity %.4f \n" % (avg_valid_loss /num_valid_batches, avg_valid_ppx/num_valid_batches))
 
 
-                previous_eval_losses.append(avg_valid_loss /num_valid_batches)
+                previous_eval_ppx.append(avg_valid_ppx /num_valid_batches)
 
                 # Stopping criterion
                 margin = 0.001
-                improve_valid = previous_eval_losses[-1] < best_val_loss + margin
+                improve_valid = previous_eval_ppx[-1] < best_val_loss + margin
                 if improve_valid:
                     strikes = 0
-                    best_val_loss = previous_eval_losses[-1]
+                    best_val_loss = previous_eval_ppx[-1]
                     # Save checkpoint.
                     model.saver.save(sess, checkpoint_path, global_step=model.global_step)
 
-                improve_train =  previous_train_loss[-1] < best_train_loss + margin
+                improve_train =  previous_train_ppx[-1] < best_train_loss + margin
                 if improve_train:
-                    best_train_loss = previous_train_loss[-1]
+                    best_train_loss = previous_train_ppx[-1]
 
                 if improve_train and not improve_valid:
                     strikes +=1
                     print("strikes : %d" % strikes )
                     if strikes > MAX_STRIKES:
                         stop_training = True
-                        print("Stopped training after %d epochs" % (model.global_step.eval()/steps_per_epoch) )
+                        print("Stopped training after %d epochs" % (int(model.global_step.eval()/steps_per_epoch)))
+                        result_file.write("Stopped training after %d epochs %d strikes \n" % int((model.global_step.eval() / steps_per_epoch)))
 
                 sys.stdout.flush()
                 train_batch_id = 1
                 current_epoch +=1
         if not stop_training:
             print("Reached the maximum number of epochs %d  stop trainig"  % (FLAGS.max_epochs))
+            result_file.write("Reached the maximum number of epochs %d  stop trainig \n" % (FLAGS.max_epochs))
 
-        print("best training loss %.2f best validation %.2f" % (best_train_loss, best_val_loss) )
+        print("best training  %.4f best validation %.4f \n" % (best_train_loss, best_val_loss) )
+        result_file.write("best training loss %.4f best validation %.4f \n" % (best_train_loss, best_val_loss))
 
         # Print testing error:
         print("END of training")
@@ -421,7 +433,10 @@ def train():
             print(
                 "		test: loss %.4f  perplexity %.4f " % (
                 total_test_loss / num_batches, total_test_ppx / num_batches))
-    return previous_train_loss, previous_eval_losses
+            result_file.write(
+                "		test: loss %.4f  perplexity %.4f " % (
+                total_test_loss / num_batches, total_test_ppx / num_batches))
+        result_file.close()
 
 def test_model():
 
@@ -475,7 +490,7 @@ def self_test():
     with tf.Session() as sess:
         print("Self-test for sequence-to-sequences model.")
         # Create model with vocabularies of 10, 2 small buckets, 2 layers of 32.
-        model = Seq2SeqsModel(88, [(3, 3), (6, 6)], 32, 2,
+        model = seq2seq_model.Seq2SeqsModel(88, [(3, 3), (6, 6)], 32, 2,
                                             5.0, 2, 32, 0.3, 0.99)
         sess.run(tf.initialize_all_variables())
 
