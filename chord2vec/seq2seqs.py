@@ -243,7 +243,7 @@ def model_with_buckets(encoder_inputs, num_decoders, all_decoders_inputs, all_ta
 					"bucket (%d)." % (len(weights), buckets[-1][1]))
 
 	def bucket_decoders_inputs(b, decoders_list):
-		return map(list,zip(*map(list, zip(*decoders_list))[:b]))
+		return map(list,zip(*list(map(list, zip(*decoders_list))[:b])))
 
 	all_inputs = encoder_inputs + all_decoders_inputs + all_targets + weights
 	losses = []

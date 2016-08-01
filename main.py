@@ -12,13 +12,14 @@ import numpy as np
 from operator import add
 import copy
 
-import cPickle
+import pickle
+from six.moves import xrange
 import tensorflow as tf
 
 from tensorflow.models.rnn.translate import data_utils
 
-from chord2vec import Seq2SeqModel
-from chord2vec import Seq2SeqsModel
+from chord2vec import seq2seq_model
+from chord2vec import seq2seqs_model
 
 tf.app.flags.DEFINE_float("learning_rate", 0.5, "Learning rate.")
 tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.99,
@@ -79,7 +80,7 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
     if not training_data ^ valid_data ^ test_data or training_data & valid_data & test_data:
         raise ValueError("Only one of training_data, valid_data and test_data can be True")
 
-    dataset = cPickle.load(file(file_name))
+    dataset = pickle.load(open(file_name,'rb'))
     train_data = dataset['train']
     valid_data = dataset['valid']
     test_data = dataset['test']
@@ -159,6 +160,7 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
                     c_j.append(data_utils.EOS_ID)
                     chord_and_context.append((list(chords_seq[i]), c_j))
             if (m_after > 0):
+
                 for context in map(list, chords_seq[(i + 1):(i + m_after + 1)]):
                     c_j = list(context)
                     c_j.append(data_utils.EOS_ID)
@@ -189,7 +191,7 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
 
         return augmented_data
 
-    theta = range(-6, 0)
+    theta = list(range(-6, 0))
     theta.extend(range(1, 6))
     augmented_data = augment_data(train_data, theta)
 
@@ -232,7 +234,7 @@ def _get_max_seqLength(chords):
 
 def create_seq2seqs_model(session, forward_only):
     """Create the model or load parameters in session """
-    model = Seq2SeqsModel(FLAGS.notes_range, _buckets, FLAGS.num_units,
+    model = seq2seqs_model.Seq2SeqsModel(FLAGS.notes_range, _buckets, FLAGS.num_units,
                           FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.num_decoders, FLAGS.batch_size,
                           FLAGS.learning_rate,
                           FLAGS.learning_rate_decay_factor)
@@ -247,11 +249,11 @@ def create_seq2seqs_model(session, forward_only):
     return model
 
 
-def create_seq2seq_model(session, forward_only):
+def create_seq2seq_model(session, forward_only, attention):
     """Create the model or load parameters in session """
-    model = Seq2SeqModel(FLAGS.notes_range, FLAGS.notes_range, _buckets, FLAGS.num_units,
+    model = seq2seq_model.Seq2SeqModel(FLAGS.notes_range, FLAGS.notes_range, _buckets, FLAGS.num_units,
                          FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.batch_size, FLAGS.learning_rate,
-                         FLAGS.learning_rate_decay_factor, forward_only=forward_only)
+                         FLAGS.learning_rate_decay_factor, forward_only=forward_only, attention=attention)
 
     checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir + "1")
     if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
@@ -278,15 +280,15 @@ def train():
             print(" %d layers of %d units with %d decoders." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
             model = create_seq2seqs_model(sess, False)
             print("Reading test and raining data.")
-            train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=FLAGS.num_decoders/2, full_context=True)
+            train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2), full_context=True)
         else:
             print("Creating sequence-to-sequence ")
             if FLAGS.attention:
                 print("with attention mechanism")
             print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.num_units))
-            model = create_seq2seq_model(sess, False)
+            model = create_seq2seq_model(sess, False, FLAGS.attention)
             print("Reading test and raining data.")
-            train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=FLAGS.num_decoders/2)
+            train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2))
 
         train_bucket_sizes = [len(train_set[b]) for b in xrange(len(_buckets))]
         train_total_size = float(sum(train_bucket_sizes))
@@ -295,7 +297,7 @@ def train():
         MAX_STRIKES = 3
         step_time, ckpt_loss,epoch_loss = 0.0, 0.0,0.0
 
-        steps_per_epoch = len(train_set[0])/FLAGS.batch_size
+        steps_per_epoch = int(len(train_set[0])/FLAGS.batch_size)
         current_step  = 0
         current_epoch = divmod(model.global_step.eval(),steps_per_epoch)[0]
         print("number of steps to complete one epoch %d" % steps_per_epoch)
@@ -307,7 +309,7 @@ def train():
 
         bucket_id = 0
         train_batch_id = 1
-        num_valid_batches = len(valid_set[bucket_id]) / FLAGS.batch_size
+        num_valid_batches = int( len(valid_set[bucket_id]) / FLAGS.batch_size)
 
 
         if FLAGS.multiple_decoders:
@@ -319,7 +321,7 @@ def train():
             if not os.path.exists(FLAGS.train_dir + "1"):
                 os.makedirs(FLAGS.train_dir + "1")
 
-        while (not stop_training) and model.global_step.eval()/steps_per_epoch < FLAGS.max_epochs:
+        while (not stop_training) and int(model.global_step.eval()/steps_per_epoch) <= FLAGS.max_epochs:
             # currently using only one bucket of size (max_seq_length, max_seq_length+2).
 
             # Get a batch and make a step.
@@ -348,14 +350,14 @@ def train():
                 previous_losses.append(ckpt_loss)
                 step_time, ckpt_loss = 0.0, 0.0
 
+
             if model.global_step.eval() % steps_per_epoch == 0:
                 print ("epoch  %d finished" % (current_epoch))
                 # Run evals on development set and print their perplexity.
                 epoch_perplexity = math.exp(epoch_loss) if ckpt_loss < 300 else float('inf')
                 previous_train_loss.append(epoch_loss)
-                print("  train:  loss %.2f perplexity %.2f" % (epoch_loss, epoch_perplexity))
+                print("  avg train batch:  loss %.2f perplexity %.2f" % (epoch_loss, epoch_perplexity))
                 epoch_loss = 0.0
-
 
                 for bucket_id in xrange(len(_buckets)):
                     avg_valid_loss, avg_valid_ppx = 0.0, 0.0
@@ -404,7 +406,7 @@ def train():
         print("END of training")
         print("Model evaluation on test data...")
         for bucket_id in xrange(len(_buckets)):
-            num_batches = len(test_set[bucket_id]) / FLAGS.batch_size
+            num_batches = int(len(test_set[bucket_id]) / FLAGS.batch_size)
             total_test_loss, total_test_ppx = 0.0, 0.0
 
             for batch_id in xrange(num_batches):
@@ -431,7 +433,7 @@ def test_model():
         train_set, _, _ = read_data(training_data=True)
 
         for bucket_id in xrange(len(_buckets)):
-            num_batches = len(test_set[bucket_id]) / FLAGS.batch_size
+            num_batches = int(len(test_set[bucket_id]) / FLAGS.batch_size)
             total_test_loss, total_test_ppx = 0.0, 0.0
 
             for batch_id in xrange(num_batches):
