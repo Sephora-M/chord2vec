@@ -42,6 +42,7 @@ tf.app.flags.DEFINE_integer("num_decoders", 2, "Number of decoders, i.e. number 
 tf.app.flags.DEFINE_string("data_file", "JSB_Chorales.pickle", "Data file name")
 tf.app.flags.DEFINE_boolean("all_data_sets", False, "Uses all 4 data sets for training")
 
+tf.app.flags.DEFINE_boolean("GD", False, "Uses Gradient Descent with adaptive learning rate")
 tf.app.flags.DEFINE_string("train_dir", "unit1024layer2", "Training directory.")
 
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
@@ -278,7 +279,7 @@ def create_seq2seq_model(session, forward_only, attention):
     """Create the model or load parameters in session """
     model = seq2seq_model.Seq2SeqModel(FLAGS.notes_range, FLAGS.notes_range, _buckets, FLAGS.num_units,
                          FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.batch_size, FLAGS.learning_rate,
-                         FLAGS.learning_rate_decay_factor,FLAGS.adam_epsilon, forward_only=forward_only, attention=attention)
+                         FLAGS.learning_rate_decay_factor,FLAGS.adam_epsilon,FLAGS.GD, forward_only=forward_only, attention=attention)
 
     checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
     if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
@@ -324,7 +325,7 @@ def train():
             if FLAGS.attention:
                 print("with attention mechanism")
                 result_file.write(("with attention mechanism \n"))
-            print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.num_units))
+            print("Creating %d layers of %d units %d bach-size." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.batch_size))
             model = create_seq2seq_model(sess, False, FLAGS.attention)
             print("Reading test and raining data.")
             if FLAGS.all_data_sets:
@@ -343,10 +344,9 @@ def train():
         if FLAGS.max_test_data_size:
             test_set[0] = test_set[0][:FLAGS.max_test_data_size]
 
-
-
         result_file.write(
-            " %d layers of %d units  %d context size. \n" % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
+            " %d layers of %d units  %d context size %d bach-size. \n" %
+            (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders, FLAGS.batch_size))
 
         # Training loop.
         MAX_STRIKES = 3
@@ -396,8 +396,9 @@ def train():
                        % (model.global_step.eval(), model.learning_rate.eval(),
                           step_time, ckpt_loss, perplexity))
                 # Decrease learning rate if no improvement was seen over last 3 times.
-                if len(previous_losses) > 2 and ckpt_loss > max(previous_losses[-3:]):
-                    sess.run(model.learning_rate_decay_op)
+                if FLAGS.GD:
+                    if len(previous_losses) > 2 and ckpt_loss > max(previous_losses[-3:]):
+                        sess.run(model.learning_rate_decay_op)
                 previous_losses.append(ckpt_loss)
                 step_time, ckpt_loss = 0.0, 0.0
 

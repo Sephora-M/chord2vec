@@ -44,7 +44,7 @@ class Seq2SeqModel(object):
 
   def __init__(self, source_vocab_size, target_vocab_size, buckets, size,
                num_layers, max_gradient_norm, batch_size, learning_rate,
-               learning_rate_decay_factor, adam_epsilon, use_lstm=False,
+               learning_rate_decay_factor, adam_epsilon, GD, use_lstm=False,
                num_samples=512, forward_only=False,attention=True):
     """Create the model.
     Args:
@@ -76,6 +76,7 @@ class Seq2SeqModel(object):
         self.learning_rate * learning_rate_decay_factor)
     self.global_step = tf.Variable(0, trainable=False)
     self.adam_epsilon = adam_epsilon
+    self.GD = GD
     # If we use sampled softmax, we need an output projection.
     output_projection = None
     softmax_loss_function = None
@@ -157,25 +158,34 @@ class Seq2SeqModel(object):
 
     # Gradients and SGD update operation for training the model.
     params = tf.trainable_variables()
+
     if not forward_only:
       self.gradient_norms = []
       self.updates = []
+      if self.GD:
+          opt = tf.train.GradientDescentOptimizer(self.learning_rate)
+          for b in xrange(len(buckets)):
+            gradients = tf.gradients(self.losses[b], params)
+            clipped_gradients, norm = tf.clip_by_global_norm(gradients,
+                                                             max_gradient_norm)
+            self.gradient_norms.append(norm)
+            self.updates.append(opt.apply_gradients(
+                zip(clipped_gradients, params), global_step=self.global_step))
+      else:
+          aggregation_method = tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N
+          opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=self.adam_epsilon)
+          for b in xrange(len(buckets)):
+            #gradients = tf.gradients(self.losses[b], params)
 
 
-      aggregation_method = tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N
-      opt = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=self.adam_epsilon)
+            gradients_and_params = opt.compute_gradients(self.losses[b],params,aggregation_method=aggregation_method)
+            gradients,params = zip(*gradients_and_params)
+            #clipped_gradients, norm = tf.clip_by_global_norm(gradients, max_gradient_norm)
+            norm = tf.global_norm(gradients)
+            self.gradient_norms.append(norm)
+            self.updates.append(opt.apply_gradients(
+                zip(gradients, params), global_step=self.global_step))
 
-      #self._train_op = opt.minimize(self._cost, aggregation_method=aggregation_method)
-
-      for b in xrange(len(buckets)):
-        #gradients = tf.gradients(self.losses[b], params)
-        gradients_and_params = opt.compute_gradients(self.losses[b],params,aggregation_method=aggregation_method)
-        gradients,params = zip(*gradients_and_params)
-        clipped_gradients, norm = tf.clip_by_global_norm(gradients,
-                                                         max_gradient_norm)
-        self.gradient_norms.append(norm)
-        self.updates.append(opt.apply_gradients(
-            zip(clipped_gradients, params), global_step=self.global_step))
 
     self.saver = tf.train.Saver(tf.all_variables())
 
@@ -222,6 +232,7 @@ class Seq2SeqModel(object):
 
     # Output feed: depends on whether we do a backward step or not.
     if not forward_only:
+
       output_feed = [self.updates[bucket_id],  # Update Op that does SGD.
                      self.gradient_norms[bucket_id],  # Gradient norm.
                      self.losses[bucket_id]]  # Loss for this batch.
