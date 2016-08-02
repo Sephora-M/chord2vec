@@ -22,9 +22,11 @@ from tensorflow.models.rnn.translate import data_utils
 from chord2vec import seq2seq_model
 from chord2vec import seq2seqs_model
 
-tf.app.flags.DEFINE_float("learning_rate", 0.5, "Learning rate.")
+tf.app.flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
 tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.99,
                           "Learning rate decays by this much.")
+tf.app.flags.DEFINE_float("adam_epsilon", 1e-6,
+                          "Epsilon used for numerical stability in Adam optimizer.")
 tf.app.flags.DEFINE_float("max_gradient_norm", 5.0,
                           "Clip gradients to this norm.")
 tf.app.flags.DEFINE_integer("batch_size", 64,
@@ -38,11 +40,16 @@ tf.app.flags.DEFINE_boolean("multiple_decoders", False, "Build sequence-to-seque
 tf.app.flags.DEFINE_integer("num_decoders", 2, "Number of decoders, i.e. number of context chords")
 
 tf.app.flags.DEFINE_string("data_file", "JSB_Chorales.pickle", "Data file name")
+tf.app.flags.DEFINE_boolean("all_data_sets", False, "Uses all 4 data sets for training")
 
 tf.app.flags.DEFINE_string("train_dir", "unit1024layer2", "Training directory.")
 
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
+tf.app.flags.DEFINE_integer("max_valid_data_size", 0,
+                            "Limit on the size of validation data (0: no limit).")
+tf.app.flags.DEFINE_integer("max_test_data_size", 0,
+                            "Limit on the size of validation data (0: no limit).")
 tf.app.flags.DEFINE_integer("max_epochs", 50,
                             "Maximium number of epochs for trainig.")
 tf.app.flags.DEFINE_integer("steps_per_checkpoint", 100,
@@ -220,6 +227,24 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
 
     return [train_chords_and_contexts], [valid_chords_and_contexts], [test_chords_and_contexts]
 
+def read_all_data(context_size,full_context=False):
+    files_dict = {}
+    files_dict['jsb'] = 'JSB_Chorales.pickle'
+    files_dict['piano'] = 'Piano-midi.de.pickle'
+    files_dict['nottigham'] = 'Nottingham.pickle'
+    files_dict['muse'] = 'MuseData.pickle'
+
+    all_train, all_valid, all_test =  [],[],[]
+
+    for d in files_dict:
+        train, valid, test = read_data(files_dict[d], context_size,full_context=full_context)
+        all_train.extend(train[0])
+        all_valid.extend(valid[0])
+        all_test.extend(test[0])
+
+    return [all_train],[all_valid], [all_test]
+
+
 
 def _get_max_seqLength(chords):
     """Gives the maximum chord length
@@ -253,7 +278,7 @@ def create_seq2seq_model(session, forward_only, attention):
     """Create the model or load parameters in session """
     model = seq2seq_model.Seq2SeqModel(FLAGS.notes_range, FLAGS.notes_range, _buckets, FLAGS.num_units,
                          FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.batch_size, FLAGS.learning_rate,
-                         FLAGS.learning_rate_decay_factor, forward_only=forward_only, attention=attention)
+                         FLAGS.learning_rate_decay_factor,FLAGS.adam_epsilon, forward_only=forward_only, attention=attention)
 
     checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
     if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
@@ -288,7 +313,11 @@ def train():
             print(" %d layers of %d units with %d decoders." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
             model = create_seq2seqs_model(sess, False)
             print("Reading test and raining data.")
-            train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2), full_context=True)
+            if FLAGS.all_data_sets:
+                train_set, valid_set, test_set = read_all_data(context_size=int(FLAGS.num_decoders / 2),
+                                                           full_context=True)
+            else:
+                train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2), full_context=True)
         else:
             result_file.write("Creating sequence-to-sequences \n")
             print("Creating sequence-to-sequence ")
@@ -298,7 +327,23 @@ def train():
             print("Creating %d layers of %d units." % (FLAGS.num_layers, FLAGS.num_units))
             model = create_seq2seq_model(sess, False, FLAGS.attention)
             print("Reading test and raining data.")
-            train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2))
+            if FLAGS.all_data_sets:
+                train_set, valid_set, test_set = read_all_data(context_size=int(FLAGS.num_decoders / 2))
+            else:
+                train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2))
+
+        random.shuffle(train_set[0])
+        random.shuffle(test_set[0])
+        random.shuffle(valid_set[0])
+
+        if FLAGS.max_train_data_size:
+            train_set[0] = train_set[0][:FLAGS.max_train_data_size]
+        if FLAGS.max_valid_data_size:
+            valid_set[0] = test_set[0][:FLAGS.max_valid_data_size]
+        if FLAGS.max_test_data_size:
+            test_set[0] = test_set[0][:FLAGS.max_test_data_size]
+
+
 
         result_file.write(
             " %d layers of %d units  %d context size. \n" % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
@@ -315,7 +360,7 @@ def train():
         best_train_loss, best_val_loss = np.inf, np.inf
         strikes = 0
         stop_training = False
-
+        result_dic = {}
         result_file.write(
             " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
 
@@ -324,14 +369,14 @@ def train():
         num_valid_batches = int( len(valid_set[bucket_id]) / FLAGS.batch_size)
 
 
-        while (not stop_training) and int(model.global_step.eval()/steps_per_epoch) <= FLAGS.max_epochs:
+        while (not stop_training) and int(model.global_step.eval()/steps_per_epoch) < FLAGS.max_epochs:
             # currently using only one bucket of size (max_seq_length, max_seq_length+2).
 
             # Get a batch and make a step.
             start_time = time.time()
 
             step_loss, _ = _get_batch_make_step(sess, model, FLAGS.multiple_decoders, train_set, FLAGS.num_decoders,
-                                                bucket_id, False,batch_id=train_batch_id)
+                                                bucket_id, False)
 
             step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
             ckpt_loss += step_loss / FLAGS.steps_per_checkpoint
@@ -373,7 +418,7 @@ def train():
                         if len(valid_set[bucket_id]) == 0:
                             print("  eval: empty bucket %d" % (bucket_id))
                             continue
-                        valid_loss, valid_ppx = _get_batch_make_step(sess, model, FLAGS.multiple_decoders,
+                        valid_loss, valid_ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
                                                                    valid_set, FLAGS.num_decoders, bucket_id, True, batch_id=batch_id+1)
                         avg_valid_loss += valid_loss
                         avg_valid_ppx += valid_ppx
@@ -425,7 +470,7 @@ def train():
                 if len(valid_set[bucket_id]) == 0:
                     print("  eval: empty bucket %d" % (bucket_id))
                     continue
-                test_loss, test_ppx = _get_batch_make_step(sess, model, FLAGS.multiple_decoders,
+                test_loss, test_ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
                                                            test_set, FLAGS.num_decoders, bucket_id, True,
                                                            batch_id=(1 + batch_id))
                 total_test_loss += test_loss
@@ -436,6 +481,14 @@ def train():
             result_file.write(
                 "		test: loss %.4f  perplexity %.4f " % (
                 total_test_loss / num_batches, total_test_ppx / num_batches))
+            result_dic['test_ppx'] = total_test_ppx / num_batches
+        result_dic['train_losses'] = previous_losses
+        result_dic['train_ppx'] = previous_train_ppx
+        result_dic['valid_ppx'] = previous_eval_ppx
+        result_dic['strikes'] = strikes
+        result_dic['epoch'] = int(model.global_step.eval()/steps_per_epoch)
+
+        pickle.dump(result_dic,open(FLAGS.train_dir + '/results.pickle','wb'))
         result_file.close()
 
 def test_model():
@@ -455,7 +508,7 @@ def test_model():
                 if len(valid_set[bucket_id]) == 0:
                     print("  eval: empty bucket %d" % (bucket_id))
                     continue
-                test_loss, test_ppx = _get_batch_make_step(sess, model, FLAGS.multiple_decoders,
+                test_loss, test_ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
                                                            test_set, FLAGS.num_decoders, bucket_id, True,
                                                            batch_id=(1 + batch_id))
                 total_test_loss += test_loss
@@ -467,17 +520,35 @@ def test_model():
 
 
 def _get_batch_make_step(sess, model, multiple_decoders, data_set, num_decoders, bucket_id, forward_only,
-                         batch_id=0):
+                         ):
     if multiple_decoders:
 
         encoder_inputs, decoder_inputs, target_weights = model.get_batch(
-                data_set, num_decoders, bucket_id, batch_id)
+                data_set, num_decoders, bucket_id)
 
         _, loss, _ = model.step(sess, encoder_inputs, num_decoders,
                                   decoder_inputs, target_weights, bucket_id, forward_only)
     else:
 
         encoder_inputs, decoder_inputs, target_weights = model.get_batch(
+                data_set, bucket_id)
+        _, loss, _ = model.step(sess, encoder_inputs,
+                                decoder_inputs, target_weights, bucket_id, forward_only)
+    ppx = math.exp(loss) if loss < 300 else float('inf')
+    return loss, ppx
+
+def _get_test_batch_make_step(sess, model, multiple_decoders, data_set, num_decoders, bucket_id, forward_only,
+                         batch_id=0):
+    if multiple_decoders:
+
+        encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
+                data_set, num_decoders, bucket_id, batch_id)
+
+        _, loss, _ = model.step(sess, encoder_inputs, num_decoders,
+                                  decoder_inputs, target_weights, bucket_id, forward_only)
+    else:
+
+        encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
                 data_set, bucket_id, batch_id)
         _, loss, _ = model.step(sess, encoder_inputs,
                                 decoder_inputs, target_weights, bucket_id, forward_only)
