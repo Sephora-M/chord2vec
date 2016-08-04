@@ -448,7 +448,7 @@ def train():
                     if strikes > MAX_STRIKES:
                         stop_training = True
                         print("Stopped training after %d epochs" % (int(model.global_step.eval()/steps_per_epoch)))
-                        result_file.write("Stopped training after %d epochs %d strikes \n" % int((model.global_step.eval() / steps_per_epoch)))
+                        result_file.write("Stopped training after %d epochs\n" % int((model.global_step.eval() / steps_per_epoch)))
 
                 sys.stdout.flush()
                 train_batch_id = 1
