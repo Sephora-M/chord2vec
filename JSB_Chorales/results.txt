@@ -1,6 +1,0 @@
-
-2016-08-02 14:29:34.261478
-Creating sequence-to-sequences 
- 2 layers of 512 units  2 context size. 
- 128 batch size 2542 number of steps to complete one epoch 
-global step 100 learning rate 0.0010 step-time 0.56 loss 1.81  perplexity 6.09 
