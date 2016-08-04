@@ -8,9 +8,14 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\C}{\mathbb{C}} 
 \newcommand{\T}{\mathcal{T}}
+\newcommand{\M}{\tilde{M}}
+\newcommand{\tmij}{\tilde{m}_{ij}}
+\newcommand{\mij}{{m}_{ij}}
+\newcommand{\mjk}{{m}_{jk}}
 \newcommand{\boldc}{\boldsymbol c}
 \newcommand{\boldd}{\boldsymbol d}
 \newcommand{\boldm}{\boldsymbol m}
+\newcommand{\boldvd}{\boldsymbol v_d}
 \DeclareMathOperator*{\argmin}{argmin}
 
 
@@ -49,8 +54,7 @@ Because the computation cost of objective~(\ref{eq:skipgram_obj}) is proportiona
 
 
 \subsection{Chord2Vec}
-Similarly to a text, we define a piece of music as a series of chords. A chord is a subset of notes drawn from a finite set of size $N$ and can be represented by a binary vector $\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N$.
-
+Similarly to a text, we define a piece of music as a series of chords. A chord is a subset of notes drawn from a finite set of size $N$ and can be represented by a binary vector $\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N$. We denote by $\mathcal{N}$ the set of all notes and $\mathcal{C}$ the set of all chords.\\
 \noindent To adapt the skip-gram model to music data there are a few points that need to be considered:
 
 \begin{enumerate}
@@ -58,37 +62,85 @@ Similarly to a text, we define a piece of music as a series of chords. A chord i
 \item The set of notes is smaller than the vocabulary considered when working with text data.
 \end{enumerate}
  
+ 
+ \subsection{Linear model 1}
 
-A naive adaptation is to use a separate sigmoid function at the output layer to predict each note in a chord. This makes the conditional independence assumption between the notes in a context chord $\boldc$ given a chord $\boldd$ , i.e \begin{equation}
-p(\boldc | \boldd) = \prod_{i=1}^N  p(c_i |  \boldd) \,.
+The first proposed linear model makes a conditional independence assumption between the notes in a context chord $\boldc$ given a chord $\boldd$ , i.e 
+\begin{equation}
+p(\boldc =\boldc' | \boldd) = \prod_{i=1}^N  p(c_i =c_i'|  \boldd) \,.
 \end{equation} 
-
-Using the weight matrix $M \in \R^{D \times N}$, we can compute a score for each note $c_i$ in a chord:
-
+Using weights matrices $M\in \R^{D \times N}$ and $\M\in \R^{N \times D}$, we can define a score function $h: \mathcal{N} \times \mathcal{C} \mapsto \mathbb{R} :$
 \begin{equation}
-h(i,\boldd) = M_{(:,i)}^T \frac{M \boldd}{\mathbbm{1}^T \boldd} \,,
+h(i,\boldd) = \M_{(:,i)} \frac{M \boldd}{| \boldd |_1} =  \M_{(:,i)} \boldvd \,,
+\end{equation}
+where $\M_{(:,i)}$ denotes the $i$'th row of $\M$ and $\boldvd$ is the D-dimensional vector representation  of chord $\boldd$.
+
+We can then use the sigmoid function to model the conditional probabilities :
+\begin{equation}
+p(c_i =c_i'|  \boldd) = \left\{
+                \begin{array}{lll}
+                  \sigma\big( h(i,\boldd) \big) = \frac{\exp(h(i,\boldd))}{1 + \exp(h(i,\boldd))} & c_i' = 1 \\
+                  1- \sigma\big( h(i,\boldd) \big) = \sigma\big( - h(i,\boldd) \big) = \frac{1}{1 + \exp(h(i,\boldd))} & c_i' = 0\\
+                \end{array}
+              \right.
 \end{equation}
 
-where $M_{(:,i)}$ denotes the $i$'th row of $M$ and $\mathbbm{1}$ is the vector of all 1's of size $N$. 
 
-We then use the sigmoid function to model the conditional probabilities $p(c_i |  \boldd)$:
-\begin{equation}
-\begin{split}
-p(\boldc|\boldd)  &=  \prod_{i=1}^N \sigma\big( (-1)^{c_i+1} h(i,\boldd) \big) \\
-& =  \prod_{i=1}^N \frac{1}{1 + \exp \big(- (-1)^{c_i+1} h(i,\boldd) \big)} \,\,\,.
-\end{split}
-\end{equation}
-
-
-The objective of this model is to maximize the average log probability:
+The objective of this model is to maximize the log probability for each context chord $\boldd$:
 
 \begin{equation}
-\frac{1}{|\T|} \sum_{\boldd \in \T} \sum_{\boldc \in C(\boldd)} \log p(\boldc|\boldd)
-= \frac{1}{|\T|} \sum_{\boldd \in \T} \sum_{\boldc \in C(\boldd)} \sum_{i=1}^N \log p(c_i |  \boldd) \,,
+\sum_{\boldc' \in C(\boldd)} \log p(\boldc = \boldc'|\boldd)
+=  \sum_{\boldc' \in C(\boldd)} \sum_{i=1}^N \log p(c_i = c_i'|  \boldd) \,,
 \label{eq:c2v_obj}
 \end{equation}
 
-Where $\T$ is the training data and $C(\boldd)$ denotes the neighborhood of chord $\boldd$.
+Where $C(\boldd)$ denotes the neighborhood of chord $\boldd$.
+
+\subsubsection*{Update equations}
+
+We define our loss function :
+\begin{equation}
+E := \log p(\boldc = \boldc'|\boldd) \,,
+\end{equation}
+and we also define
+\begin{equation}
+E_i := \log  p(c_i = c_i'|  \boldd) \,,
+\end{equation} 
+where $\boldc'= \{c_1',...,c_N'\} \in C(\boldd)$.
+
+Using stochastic gradient descent with learning rate $\eta > 0$, the weight update equations for the weights given by $\M$ and $M$ respectively are:
+
+\[
+\tmij^{(t+1)} = \tmij^{(t)} - \eta \frac{\partial E_i}{\partial \tmij} \,,
+\]
+
+\[
+\mjk^{(t+1)} = \mjk^{(t)} - \eta \frac{\partial E}{\partial \mjk} \,,
+\]
+
+where $\tmij$ and $\mjk$ are elements of $\M$ and $M$ respectively.
+We now compute the gradients. First observe that
+
+\[
+\begin{split}
+E_i &= c_i' \log p(c_i = 1 | d) + (1-c_i) \log p(c_i = 0 | d)\\
+&= c_i u_i - \log(1 + \exp(u_i)) \,,
+\end{split}
+\]
+
+where we write $u_i = h(i,\boldd)$ to ease the reading. Then 
+
+\[ 
+\frac{\partial E_i}{\partial \tmij} = \dfrac{\partial E_i}{\partial u_i} \dfrac{\partial u_i}{\partial \tmij} = (c_i' - \frac{\exp(u_i)}{1 + \exp(u_i)}) v_{dj}
+\]
+
+where $v_{dj}$ denotes the $j$'th element of $\boldvd$.
+
+
+\[ 
+\frac{\partial E}{\partial \mjk} = \dfrac{\partial E}{\partial v_{dj}} \dfrac{\partial v_{dj}}{\partial \mjk} = \big(\sum_{i=1}^N \dfrac{\partial E_i}{\partial u_i} \dfrac{\partial u_i}{\partial v_{dj}}\big) \dfrac{\partial v_{dj}}{\partial \mjk} = \sum_{i=1}^N \big( c_j' - \frac{\exp(u_i)}{1 + \exp(u_i)} \tmij \big) d_k
+\]
+
 
 %The second point, together with the fact that the computation of the objective is no longer dependent of number of possible context chords (since we are not using softmax, the sum over all possible context chords disappears) suggest that there might not be the need to use efficiency optimizations tricks as negative sampling. 
  
