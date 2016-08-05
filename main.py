@@ -17,6 +17,9 @@ import pickle
 from six.moves import xrange
 import tensorflow as tf
 
+from tensorflow.python.ops import variable_scope as vs
+
+
 from tensorflow.models.rnn.translate import data_utils
 
 from chord2vec import seq2seq_model
@@ -39,7 +42,7 @@ tf.app.flags.DEFINE_boolean("attention", True, "Build sequence-to-sequence model
 tf.app.flags.DEFINE_boolean("multiple_decoders", False, "Build sequence-to-sequences model")
 tf.app.flags.DEFINE_integer("num_decoders", 2, "Number of decoders, i.e. number of context chords")
 
-tf.app.flags.DEFINE_string("data_file", "JSB_Chorales.pickle", "Data file name")
+tf.app.flags.DEFINE_string("data_file", "reduced_JSB.pickle", "Data file name")
 tf.app.flags.DEFINE_boolean("all_data_sets", False, "Uses all 4 data sets for training")
 
 tf.app.flags.DEFINE_boolean("GD", False, "Uses Gradient Descent with adaptive learning rate")
@@ -69,7 +72,7 @@ _buckets = [(4, 6)]
 
 def read_data(file_name, context_size, full_context=False, training_data=True,
               valid_data=False, test_data=False):
-    """"Load  file_name and build (inputs, targets) pairs
+    """"Load file_name and build (inputs, targets) pairs
 
 		Args:
 			file_name: path to the pickled piano-roll file
@@ -275,21 +278,72 @@ def create_seq2seqs_model(session, forward_only):
     return model
 
 
-def create_seq2seq_model(session, forward_only, attention):
+def create_seq2seq_model(session, forward_only, attention, result_file=None, batch_size=None, same_param=False):
     """Create the model or load parameters in session """
+    if batch_size is None:
+        batch_size = FLAGS.batch_size
+
     model = seq2seq_model.Seq2SeqModel(FLAGS.notes_range, FLAGS.notes_range, _buckets, FLAGS.num_units,
-                         FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.batch_size, FLAGS.learning_rate,
+                         FLAGS.num_layers, FLAGS.max_gradient_norm, batch_size, FLAGS.learning_rate,
                          FLAGS.learning_rate_decay_factor,FLAGS.adam_epsilon,FLAGS.GD, forward_only=forward_only, attention=attention)
 
-    checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
-    if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
-        print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
-        model.saver.restore(session, checkpoint.model_checkpoint_path)
-    else:
-        print("Created model with fresh parameters.")
-        session.run(tf.initialize_all_variables())
+    if not same_param:
+        checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
+        if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
+            if result_file is not None:
+                result_file.write("Continue training existing model! ")
+            print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
+            model.saver.restore(session, checkpoint.model_checkpoint_path)
+        else:
+            print("Created model with fresh parameters.")
+            session.run(tf.initialize_all_variables())
     return model
 
+def _save_parameters(save):
+    params_dic = {}
+
+    params_dic["batch_size"] = FLAGS.batch_size
+    params_dic["num_layers"] = FLAGS.num_layers
+    params_dic["num_units"] = FLAGS.num_units
+    params_dic["num_decoders"] = FLAGS.num_decoders
+    params_dic["data_file"] = FLAGS.data_file
+    params_dic["attention"] = FLAGS.attention
+    params_dic["GD"] = FLAGS.GD
+    params_dic["learning_rate"] = FLAGS.learning_rate
+    params_dic["all_data_sets"] = FLAGS.all_data_sets
+    params_dic["max_epochs"] = FLAGS.max_epochs
+    params_dic["multiple_decoders"] = FLAGS.multiple_decoders
+    params_dic["adam_epsilon"] = FLAGS.adam_epsilon
+    params_dic["steps_per_checkpoint"] = FLAGS.steps_per_checkpoint
+    params_dic["max_gradient_norm"] = FLAGS.max_gradient_norm
+    params_dic["max_train_data_size"] = FLAGS.max_train_data_size
+    params_dic["max_test_data_size"] = FLAGS.max_test_data_size
+    params_dic["max_valid_data_size"] = FLAGS.max_valid_data_size
+    params_dic["train_dir"] = FLAGS.train_dir
+
+    if save:
+        pickle.dump(params_dic, open(FLAGS.train_dir + '/params.pickle', 'wb'))
+    return params_dic
+
+def _check_dir(dir):
+    """
+    Checks if a directory exists; if not, creates a new directory and goes on.
+     if it does exist; checks if it contains a trained model. If that is the case, print e message a quit.
+     If it doesn't contain a trained model, either load existing parameters or
+    Returns: True if the directory exists and contains a trained model, False otherwise.
+    """
+
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    else:
+        if not os.path.isfile(dir+"/params.pickle"):
+            _save_parameters(True)
+        else:
+            if _save_parameters(False) !=  pickle.load(open(dir+"/params.pickle",'rb')):
+                raise ValueError("%s  directory contains a model trained with different parameters" % (dir))
+        checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
+        if checkpoint and os.path.isfile(dir + "/results.pickle"):
+            raise IOError("A model trained with these parameters already exists!")
 
 def train():
     """Train a model
@@ -300,223 +354,222 @@ def train():
 
     with tf.Session() as sess:
         # Create model.
-        checkpoint_path = FLAGS.train_dir + "/chords2vec.ckpt"
-        if not os.path.exists(FLAGS.train_dir):
-            os.makedirs(FLAGS.train_dir)
+        with tf.variable_scope("model") as scope:
+            _check_dir(FLAGS.train_dir)
 
-        result_file = open(FLAGS.train_dir + "/results.txt", 'a+')
-        result_file.write("\n")
-        result_file.write(str(datetime.datetime.now()))
-        result_file.write("\n")
-        if FLAGS.multiple_decoders:
-            result_file.write("Creating sequence-to-sequences \n")
-            print("Creating sequence-to-sequences ")
-            print(" %d layers of %d units with %d decoders." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
-            model = create_seq2seqs_model(sess, False)
-            print("Reading test and raining data.")
-            if FLAGS.all_data_sets:
-                train_set, valid_set, test_set = read_all_data(context_size=int(FLAGS.num_decoders / 2),
-                                                           full_context=True)
+            result_file = open(FLAGS.train_dir + "/results.txt", 'a+')
+
+            if FLAGS.multiple_decoders:
+                result_file.write("Creating sequence-to-sequences \n")
+                print("Creating sequence-to-sequences ")
+                print(" %d layers of %d units with %d decoders." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders))
+                model = create_seq2seqs_model(sess, False)
+                print("Reading test and raining data.")
+                if FLAGS.all_data_sets:
+                    train_set, valid_set, test_set = read_all_data(context_size=int(FLAGS.num_decoders / 2),
+                                                               full_context=True)
+                else:
+                    train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2), full_context=True)
             else:
-                train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2), full_context=True)
-        else:
-            result_file.write("Creating sequence-to-sequences \n")
-            print("Creating sequence-to-sequence ")
-            if FLAGS.attention:
-                print("with attention mechanism")
-                result_file.write(("with attention mechanism \n"))
-            print("Creating %d layers of %d units %d bach-size." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.batch_size))
-            model = create_seq2seq_model(sess, False, FLAGS.attention)
-            print("Reading test and raining data.")
-            if FLAGS.all_data_sets:
-                train_set, valid_set, test_set = read_all_data(context_size=int(FLAGS.num_decoders / 2))
-            else:
-                train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2))
-
-        random.shuffle(train_set[0])
-        random.shuffle(test_set[0])
-        random.shuffle(valid_set[0])
-
-        if FLAGS.max_train_data_size:
-            train_set[0] = train_set[0][:FLAGS.max_train_data_size]
-        if FLAGS.max_valid_data_size:
-            valid_set[0] = test_set[0][:FLAGS.max_valid_data_size]
-        if FLAGS.max_test_data_size:
-            test_set[0] = test_set[0][:FLAGS.max_test_data_size]
-
-        result_file.write(
-            " %d layers of %d units  %d context size %d bach-size. \n" %
-            (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders, FLAGS.batch_size))
-
-        # Training loop.
-        MAX_STRIKES = 3
-        step_time, ckpt_loss,epoch_loss = 0.0, 0.0,0.0
-
-        steps_per_epoch = int(len(train_set[0])/FLAGS.batch_size)
-        current_step  = 0
-        current_epoch = divmod(model.global_step.eval(),steps_per_epoch)[0]
-        print("number of steps to complete one epoch %d" % steps_per_epoch)
-        previous_losses,previous_train_ppx, previous_eval_ppx = [],[],[]
-        best_train_loss, best_val_loss = np.inf, np.inf
-        strikes = 0
-        stop_training = False
-        result_dic = {}
-        result_file.write(
-            " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
-
-        bucket_id = 0
-        train_batch_id = 1
-        num_valid_batches = int( len(valid_set[bucket_id]) / FLAGS.batch_size)
+                result_file.write("Creating sequence-to-sequences \n")
+                print("Creating sequence-to-sequence ")
+                if FLAGS.attention:
+                    print("with attention mechanism")
+                    result_file.write(("with attention mechanism \n"))
+                print("Creating %d layers of %d units %d bach-size." % (FLAGS.num_layers, FLAGS.num_units, FLAGS.batch_size))
 
 
-        while (not stop_training) and int(model.global_step.eval()/steps_per_epoch) < FLAGS.max_epochs:
-            # currently using only one bucket of size (max_seq_length, max_seq_length+2).
+                model = create_seq2seq_model(sess, False, FLAGS.attention,result_file)
+                print("Reading test and raining data.")
+                if FLAGS.all_data_sets:
+                    train_set, valid_set, test_set = read_all_data(context_size=int(FLAGS.num_decoders / 2))
+                else:
+                    train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders/2))
 
-            # Get a batch and make a step.
-            start_time = time.time()
+            scope.reuse_variables()
 
-            step_loss, _ = _get_batch_make_step(sess, model, FLAGS.multiple_decoders, train_set, FLAGS.num_decoders,
-                                                bucket_id, False)
+            result_file.write("\n")
+            result_file.write(str(datetime.datetime.now()))
+            result_file.write("\n")
 
-            step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
-            ckpt_loss += step_loss / FLAGS.steps_per_checkpoint
-            epoch_loss += step_loss/ steps_per_epoch
+            random.shuffle(train_set[0])
+            random.shuffle(test_set[0])
+            random.shuffle(valid_set[0])
 
-            current_step += 1
-            train_batch_id +=1
-            # Once in a while, we save checkpoint, print statistics, and run evals.
-            if current_step % FLAGS.steps_per_checkpoint == 0:
-                # Print statistics for the previous epoch.
-                perplexity = math.exp(ckpt_loss) if ckpt_loss < 300 else float('inf')
-                print ("batch no %d epoch %d" % (train_batch_id,current_epoch))
-                print ("global step %d learning rate %.4f step-time %.2f loss %.2f  perplexity %.2f"
-                       % (model.global_step.eval(), model.learning_rate.eval(),
-                          step_time, ckpt_loss, perplexity))
-                result_file.write("global step %d learning rate %.4f step-time %.2f loss %.2f  perplexity %.2f \n"
-                       % (model.global_step.eval(), model.learning_rate.eval(),
-                          step_time, ckpt_loss, perplexity))
-                # Decrease learning rate if no improvement was seen over last 3 times.
-                if FLAGS.GD:
-                    if len(previous_losses) > 2 and ckpt_loss > max(previous_losses[-3:]):
-                        sess.run(model.learning_rate_decay_op)
-                previous_losses.append(ckpt_loss)
-                step_time, ckpt_loss = 0.0, 0.0
+            if FLAGS.max_train_data_size:
+                train_set[0] = train_set[0][:FLAGS.max_train_data_size]
+            if FLAGS.max_valid_data_size:
+                valid_set[0] = test_set[0][:FLAGS.max_valid_data_size]
+            if FLAGS.max_test_data_size:
+                test_set[0] = test_set[0][:FLAGS.max_test_data_size]
 
-
-            if model.global_step.eval() % steps_per_epoch == 0:
-                print ("epoch  %d finished" % (current_epoch))
-                result_file.write("epoch  %d finished \n" % (current_epoch))
-                # Run evals on development set and print their perplexity.
-                epoch_perplexity = math.exp(epoch_loss) if ckpt_loss < 300 else float('inf')
-                previous_train_ppx.append(epoch_perplexity)
-                print("  avg train batch:  loss %.2f perplexity %.2f" % (epoch_loss, epoch_perplexity))
-                result_file.write("  avg train batch:  loss %.4f perplexity %.4f \n" % (epoch_loss, epoch_perplexity))
-                epoch_loss = 0.0
-
-                for bucket_id in xrange(len(_buckets)):
-                    avg_valid_loss, avg_valid_ppx = 0.0, 0.0
-                    for batch_id in xrange(num_valid_batches):
-                        if len(valid_set[bucket_id]) == 0:
-                            print("  eval: empty bucket %d" % (bucket_id))
-                            continue
-                        valid_loss, valid_ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
-                                                                   valid_set, FLAGS.num_decoders, bucket_id, True, batch_id=batch_id+1)
-                        avg_valid_loss += valid_loss
-                        avg_valid_ppx += valid_ppx
-                    print("  eval:  loss %.2f perplexity %.2f" % (avg_valid_loss /num_valid_batches, avg_valid_ppx/num_valid_batches))
-                    result_file.write("  eval:  loss %.4f perplexity %.4f \n" % (avg_valid_loss /num_valid_batches, avg_valid_ppx/num_valid_batches))
-
-
-                previous_eval_ppx.append(avg_valid_ppx /num_valid_batches)
-
-                # Stopping criterion
-                margin = 0.001
-                improve_valid = previous_eval_ppx[-1] < best_val_loss + margin
-                if improve_valid:
-                    strikes = 0
-                    best_val_loss = previous_eval_ppx[-1]
-                    # Save checkpoint.
-                    model.saver.save(sess, checkpoint_path, global_step=model.global_step)
-
-                improve_train =  previous_train_ppx[-1] < best_train_loss + margin
-                if improve_train:
-                    best_train_loss = previous_train_ppx[-1]
-
-                if improve_train and not improve_valid:
-                    strikes +=1
-                    print("strikes : %d" % strikes )
-                    if strikes > MAX_STRIKES:
-                        stop_training = True
-                        print("Stopped training after %d epochs" % (int(model.global_step.eval()/steps_per_epoch)))
-                        result_file.write("Stopped training after %d epochs\n" % int((model.global_step.eval() / steps_per_epoch)))
-
-                sys.stdout.flush()
-                train_batch_id = 1
-                current_epoch +=1
-        if not stop_training:
-            print("Reached the maximum number of epochs %d  stop trainig"  % (FLAGS.max_epochs))
-            result_file.write("Reached the maximum number of epochs %d  stop trainig \n" % (FLAGS.max_epochs))
-
-        print("best training  %.4f best validation %.4f \n" % (best_train_loss, best_val_loss) )
-        result_file.write("best training loss %.4f best validation %.4f \n" % (best_train_loss, best_val_loss))
-
-        # Print testing error:
-        print("END of training")
-        print("Model evaluation on test data...")
-        for bucket_id in xrange(len(_buckets)):
-            num_batches = int(len(test_set[bucket_id]) / FLAGS.batch_size)
-            total_test_loss, total_test_ppx = 0.0, 0.0
-
-            for batch_id in xrange(num_batches):
-                if len(valid_set[bucket_id]) == 0:
-                    print("  eval: empty bucket %d" % (bucket_id))
-                    continue
-                test_loss, test_ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
-                                                           test_set, FLAGS.num_decoders, bucket_id, True,
-                                                           batch_id=(1 + batch_id))
-                total_test_loss += test_loss
-                total_test_ppx += test_ppx
-            print(
-                "		test: loss %.4f  perplexity %.4f " % (
-                total_test_loss / num_batches, total_test_ppx / num_batches))
             result_file.write(
-                "		test: loss %.4f  perplexity %.4f " % (
-                total_test_loss / num_batches, total_test_ppx / num_batches))
-            result_dic['test_ppx'] = total_test_ppx / num_batches
-        result_dic['train_losses'] = previous_losses
-        result_dic['train_ppx'] = previous_train_ppx
-        result_dic['valid_ppx'] = previous_eval_ppx
-        result_dic['strikes'] = strikes
-        result_dic['epoch'] = int(model.global_step.eval()/steps_per_epoch)
+                " %d layers of %d units  %d context size %d bach-size. \n" %
+                (FLAGS.num_layers, FLAGS.num_units, FLAGS.num_decoders, FLAGS.batch_size))
 
-        pickle.dump(result_dic,open(FLAGS.train_dir + '/results.pickle','wb'))
-        result_file.close()
 
-def test_model():
+            # Training loop.
+            MAX_STRIKES = 3
+            step_time, ckpt_loss = 0.0, 0.0
 
+            steps_per_epoch = int(len(train_set[0])/FLAGS.batch_size)
+            current_step  = 0
+            current_epoch = divmod(model.global_step.eval(),steps_per_epoch)[0]
+            print("number of steps to complete one epoch %d" % steps_per_epoch)
+            previous_losses,previous_train_ppx, previous_eval_ppx = [],[],[]
+            best_train_loss, best_val_loss = np.inf, np.inf
+            strikes = 0
+            stop_training = False
+
+            result_file.write(
+                " %d batch size %d number of steps to complete one epoch \n" % (FLAGS.batch_size, steps_per_epoch))
+
+            bucket_id = 0
+            train_batch_id = 1
+            num_valid_batches = int( len(valid_set[bucket_id]) / FLAGS.batch_size)
+
+            checkpoint_path = FLAGS.train_dir + "/chords2vec.ckpt"
+
+            result_dic = {}
+
+            while (not stop_training) and int(model.global_step.eval()/steps_per_epoch) < FLAGS.max_epochs:
+                # currently using only one bucket of size (max_seq_length, max_seq_length+2).
+
+                # Get a batch and make a step.
+                start_time = time.time()
+
+                step_loss, _ = _get_batch_make_step(sess, model, FLAGS.multiple_decoders, train_set, FLAGS.num_decoders,
+                                                    bucket_id, False)
+
+                step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
+                ckpt_loss += step_loss / FLAGS.steps_per_checkpoint
+
+                current_step += 1
+                train_batch_id +=1
+                # Once in a while, we save checkpoint, print statistics, and run evals.
+                if current_step % FLAGS.steps_per_checkpoint == 0:
+                    # Print statistics for the previous epoch.
+                    perplexity = math.exp(ckpt_loss) if ckpt_loss < 300 else float('inf')
+                    print ("batch no %d epoch %d" % (train_batch_id,current_epoch))
+                    print ("global step %d learning rate %.4f step-time %.2f loss %.2f  perplexity %.2f"
+                           % (model.global_step.eval(), model.learning_rate.eval(),
+                              step_time, ckpt_loss, perplexity))
+                    result_file.write("global step %d learning rate %.4f step-time %.2f loss %.2f  perplexity %.2f \n"
+                           % (model.global_step.eval(), model.learning_rate.eval(),
+                              step_time, ckpt_loss, perplexity))
+                    # Decrease learning rate if no improvement was seen over last 3 times.
+                    if FLAGS.GD:
+                        if len(previous_losses) > 2 and ckpt_loss > max(previous_losses[-3:]):
+                            sess.run(model.learning_rate_decay_op)
+                    previous_losses.append(ckpt_loss)
+                    step_time, ckpt_loss = 0.0, 0.0
+
+
+                if model.global_step.eval() % steps_per_epoch == 0:
+                    print ("epoch  %d finished" % (current_epoch))
+                    result_file.write("epoch  %d finished \n" % (current_epoch))
+                    # Run evals on development set and print their perplexity.
+
+                    _,train_loss, train_ppx = test_model("train_test",sess, train=True)
+                    previous_train_ppx.append(train_ppx)
+                    print("  train:  loss %.2f perplexity %.2f" % (train_loss, train_ppx))
+                    result_file.write("  train:  loss %.4f perplexity %.4f \n" % (train_loss, train_ppx))
+
+                    _,valid_loss, valid_ppx = test_model("eval_valid",sess, valid=True)
+
+                    print("  eval:  loss %.2f perplexity %.2f" % (valid_loss, valid_ppx))
+                    result_file.write("  eval:  loss %.4f perplexity %.4f \n" % (valid_loss, valid_ppx))
+
+                    previous_eval_ppx.append(valid_ppx)
+
+                    # Stopping criterion
+                    margin = 0.001
+                    improve_valid = previous_eval_ppx[-1] < best_val_loss + margin
+                    if improve_valid:
+                        strikes = 0
+                        best_val_loss = previous_eval_ppx[-1]
+                        # Save checkpoint.
+                        model.saver.save(sess, checkpoint_path, global_step=model.global_step)
+
+                    improve_train =  previous_train_ppx[-1] < best_train_loss + margin
+                    if improve_train:
+                        best_train_loss = previous_train_ppx[-1]
+
+                    if improve_train and not improve_valid:
+                        strikes +=1
+                        print("strikes : %d" % strikes )
+                        if strikes > MAX_STRIKES:
+                            stop_training = True
+                            print("Stopped training after %d epochs" % (int(model.global_step.eval()/steps_per_epoch)))
+                            result_file.write("Stopped training after %d epochs\n" % int((model.global_step.eval() / steps_per_epoch)))
+
+                    sys.stdout.flush()
+                    train_batch_id = 1
+                    current_epoch +=1
+            if not stop_training:
+                print("Reached the maximum number of epochs %d  stop trainig"  % (FLAGS.max_epochs))
+                result_file.write("Reached the maximum number of epochs %d  stop trainig \n" % (FLAGS.max_epochs))
+
+            print("best training  %.4f best validation %.4f \n" % (best_train_loss, best_val_loss) )
+            result_file.write("best training loss %.4f best validation %.4f \n" % (best_train_loss, best_val_loss))
+
+            # Print testing error:
+            print("END of training")
+            print("Model evaluation on test data...")
+
+            _, test_loss, test_ppx = test_model("eval_test",sess, test=True)
+            print("  test:  loss %.2f perplexity %.2f" % (test_loss, test_ppx))
+            result_file.write("  test:  loss %.4f perplexity %.4f \n" % (test_loss, test_ppx))
+
+            result_dic['test_ppx'] = test_ppx
+            result_dic['train_losses'] = previous_losses
+            result_dic['train_ppx'] = previous_train_ppx
+            result_dic['valid_ppx'] = previous_eval_ppx
+            result_dic['strikes'] = strikes
+            result_dic['epoch'] = int(model.global_step.eval()/steps_per_epoch)
+
+            pickle.dump(result_dic,open(FLAGS.train_dir + '/results.pickle','wb'))
+            result_file.close()
+
+def test_model(scope, sess, train=False, valid=False, test=False):
+    train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders / 2))
+    data_set = []
+    if train:
+        data_set = train_set
+    if valid:
+        data_set = valid_set
+    if test:
+        data_set = test_set
+
+
+    batch_size = len(data_set[0])
+    model = create_seq2seq_model(sess, True,  attention=FLAGS.attention, result_file=None, batch_size=batch_size, same_param=True)
+
+    for bucket_id in xrange(len(_buckets)):
+
+        if len(valid_set[bucket_id]) == 0:
+            print("  eval: empty bucket %d" % (bucket_id))
+            continue
+        encoder_final_state, loss, ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
+                                                   data_set, FLAGS.num_decoders, bucket_id, True,
+                                                   batch_id=1)
+    return encoder_final_state, loss,ppx
+
+
+def get_vector_representation(data_point):
     with tf.Session() as sess:
-        model = create_seq2seq_model(sess, False)
-        print("Reading test and raining data.")
-        test_set, _, _ = read_data(training_data=False, test_data=True)
-        valid_set, _, _ = read_data(training_data=False, valid_data=True)
-        train_set, _, _ = read_data(training_data=True)
+        with tf.variable_scope("model") as scope:
+            batch_size=1
+            bucket_id =0
+            model = create_seq2seq_model(sess, True, attention=FLAGS.attention, result_file=None, batch_size=batch_size)
 
-        for bucket_id in xrange(len(_buckets)):
-            num_batches = int(len(test_set[bucket_id]) / FLAGS.batch_size)
-            total_test_loss, total_test_ppx = 0.0, 0.0
-
-            for batch_id in xrange(num_batches):
-                if len(valid_set[bucket_id]) == 0:
-                    print("  eval: empty bucket %d" % (bucket_id))
-                    continue
-                test_loss, test_ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
-                                                           test_set, FLAGS.num_decoders, bucket_id, True,
-                                                           batch_id=(1 + batch_id))
-                total_test_loss += test_loss
-                total_test_ppx += test_ppx
-            print(
-                "		test: loss %.4f  perplexity %.4f " % (
-                total_test_loss / num_batches, total_test_ppx / num_batches))
+            if len(data_point[bucket_id]) == 0:
+                print("  eval: empty bucket %d" % (bucket_id))
+            encoder_final_state, loss, ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
+                                                                       data_point, FLAGS.num_decoders, bucket_id, True,
+                                                                       batch_id=1)
+    print(encoder_final_state)
+    return encoder_final_state
 
 
 
@@ -527,16 +580,20 @@ def _get_batch_make_step(sess, model, multiple_decoders, data_set, num_decoders,
         encoder_inputs, decoder_inputs, target_weights = model.get_batch(
                 data_set, num_decoders, bucket_id)
 
-        _, loss, _ = model.step(sess, encoder_inputs, num_decoders,
+        encoder_final_state, loss, _ = model.step(sess, encoder_inputs, num_decoders,
                                   decoder_inputs, target_weights, bucket_id, forward_only)
     else:
 
         encoder_inputs, decoder_inputs, target_weights = model.get_batch(
                 data_set, bucket_id)
-        _, loss, _ = model.step(sess, encoder_inputs,
+        encoder_final_state, loss, _ = model.step(sess, encoder_inputs,
                                 decoder_inputs, target_weights, bucket_id, forward_only)
     ppx = math.exp(loss) if loss < 300 else float('inf')
-    return loss, ppx
+
+    if not forward_only:
+        return loss, ppx
+    else:
+        return encoder_final_state, loss,ppx
 
 def _get_test_batch_make_step(sess, model, multiple_decoders, data_set, num_decoders, bucket_id, forward_only,
                          batch_id=0):
@@ -545,16 +602,19 @@ def _get_test_batch_make_step(sess, model, multiple_decoders, data_set, num_deco
         encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
                 data_set, num_decoders, bucket_id, batch_id)
 
-        _, loss, _ = model.step(sess, encoder_inputs, num_decoders,
+        encoder_final_state, loss, _ = model.step(sess, encoder_inputs, num_decoders,
                                   decoder_inputs, target_weights, bucket_id, forward_only)
     else:
 
         encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
                 data_set, bucket_id, batch_id)
-        _, loss, _ = model.step(sess, encoder_inputs,
+        encoder_final_state, loss, _ = model.step(sess, encoder_inputs,
                                 decoder_inputs, target_weights, bucket_id, forward_only)
     ppx = math.exp(loss) if loss < 300 else float('inf')
-    return loss, ppx
+    if not forward_only:
+        return loss, ppx
+    else:
+        return encoder_final_state, loss,ppx
 
 
 def self_test():
@@ -562,7 +622,7 @@ def self_test():
     with tf.Session() as sess:
         print("Self-test for sequence-to-sequences model.")
         # Create model with vocabularies of 10, 2 small buckets, 2 layers of 32.
-        model = seq2seq_model.Seq2SeqsModel(88, [(3, 3), (6, 6)], 32, 2,
+        model = seq2seqs_model.Seq2SeqsModel(88, [(3, 3), (6, 6)], 32, 2,
                                             5.0, 2, 32, 0.3, 0.99)
         sess.run(tf.initialize_all_variables())
 
@@ -582,7 +642,11 @@ def self_test():
 
 
 def main(_):
-    train()
+    if FLAGS.test_model:
+        test_chord = [[([60, 72, 79, 88, 2],[72, 79, 88, 2])]]
+        get_vector_representation(test_chord)
+    else:
+        train()
 
 
 if __name__ == "__main__":
