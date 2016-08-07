@@ -24,7 +24,7 @@ import random
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-from chord2vec import seq2seq
+from chord2vec import seq2seqs as seq2seq
 
 from tensorflow.models.rnn.translate import data_utils
 
@@ -153,8 +153,7 @@ class Seq2SeqModel(object):
     else:
       self.outputs, self.losses, self.encoder_final_state = seq2seq.model_with_buckets(
           self.encoder_inputs, self.decoder_inputs, targets,
-          self.target_weights, buckets,
-          lambda x, y: seq2seq_f(x, y, False, attention),
+          self.target_weights, buckets, lambda x, y: seq2seq_f(x, y, False, attention),
           softmax_loss_function=softmax_loss_function)
 
     # Gradients and SGD update operation for training the model.
