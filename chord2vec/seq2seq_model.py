@@ -151,7 +151,7 @@ class Seq2SeqModel(object):
               for output in self.outputs[b]
           ]
     else:
-      self.outputs, self.losses, self.encoder_final_state = tf.nn.seq2seq.model_with_buckets(
+      self.outputs, self.losses, self.encoder_final_state = seq2seq.model_with_buckets(
           self.encoder_inputs, self.decoder_inputs, targets,
           self.target_weights, buckets,
           lambda x, y: seq2seq_f(x, y, False, attention),
