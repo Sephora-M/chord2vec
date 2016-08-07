@@ -71,7 +71,7 @@ from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import rnn
 from tensorflow.python.ops import rnn_cell
 from tensorflow.python.ops import variable_scope
-
+from tensorflow.python.ops.rnn_cell import linear
 
 def _extract_argmax_and_embed(embedding, output_projection=None,
                               update_embedding=True):
@@ -521,7 +521,7 @@ def attention_decoder(decoder_inputs, initial_state, attention_states, cell,
       ds = []  # Results of attention reads will be stored here.
       for a in xrange(num_heads):
         with variable_scope.variable_scope("Attention_%d" % a):
-          y = rnn_cell.linear(query, attention_vec_size, True)
+          y = linear(query, attention_vec_size, True)
           y = array_ops.reshape(y, [-1, 1, 1, attention_vec_size])
           # Attention mask is a softmax of v^T * tanh(...).
           s = math_ops.reduce_sum(
@@ -551,7 +551,7 @@ def attention_decoder(decoder_inputs, initial_state, attention_states, cell,
         with variable_scope.variable_scope("loop_function", reuse=True):
           inp = loop_function(prev, i)
       # Merge input and previous attentions into one vector of the right size.
-      x = rnn_cell.linear([inp] + attns, cell.input_size, True)
+      x = linear([inp] + attns, cell.input_size, True)
       # Run the RNN.
       cell_output, state = cell(x, state)
       # Run the attention mechanism.
@@ -563,7 +563,7 @@ def attention_decoder(decoder_inputs, initial_state, attention_states, cell,
         attns = attention(state)
 
       with variable_scope.variable_scope("AttnOutputProjection"):
-        output = rnn_cell.linear([cell_output] + attns, output_size, True)
+        output = linear([cell_output] + attns, output_size, True)
       if loop_function is not None:
         prev = output
       outputs.append(output)
