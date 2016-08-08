@@ -556,8 +556,6 @@ def test_model(scope, sess, train=False, valid=False, test=False):
     return encoder_final_state, loss,ppx
 
 def test_model_in_batches(sess, model, data_set):
-
-
     for bucket_id in xrange(len(_buckets)):
         num_batches = int(len(data_set[bucket_id]) / FLAGS.batch_size)
         total_loss = 0.0

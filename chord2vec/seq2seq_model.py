@@ -24,7 +24,7 @@ import random
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-from chord2vec import seq2seq # as seq2seq
+from chord2vec import seq2seqb as seq2seq
 
 from tensorflow.models.rnn.translate import data_utils
 
@@ -187,7 +187,7 @@ class Seq2SeqModel(object):
                 zip(gradients, params), global_step=self.global_step))
 
 
-    self.saver = tf.train.Saver(tf.all_variables())
+    self.saver = tf.train.Saver(tf.all_variables(),max_to_keep=1)
 
   def step(self, session, encoder_inputs, decoder_inputs, target_weights,
            bucket_id, forward_only):
