@@ -470,12 +470,12 @@ def train():
                     result_file.write("epoch  %d finished \n" % (current_epoch))
                     # Run evals on development set and print their perplexity.
 
-                    _,train_loss, train_ppx = test_model_in_batches("train_test",sess, train=True)
+                    _,train_loss, train_ppx = test_model_in_batches(sess, model, train_set)
                     previous_train_ppx.append(train_ppx)
                     print("  train:  loss %.4f perplexity %.4f" % (train_loss, train_ppx))
                     result_file.write("  train:  loss %.4f perplexity %.4f \n" % (train_loss, train_ppx))
 
-                    _,valid_loss, valid_ppx = test_model_in_batches("eval_valid",sess, valid=True)
+                    _,valid_loss, valid_ppx = test_model_in_batches(sess, model, valid_set)
 
                     print("  eval:  loss %.4f perplexity %.4f" % (valid_loss, valid_ppx))
                     result_file.write("  eval:  loss %.4f perplexity %.4f \n" % (valid_loss, valid_ppx))
@@ -517,7 +517,7 @@ def train():
             print("END of training")
             print("Model evaluation on test data...")
 
-            _, test_loss, test_ppx = test_model_in_batches("eval_test",sess, test=True)
+            _, test_loss, test_ppx = test_model_in_batches(sess, model, test_set)
             print("  test:  loss %.4f perplexity %.4f" % (test_loss, test_ppx))
             result_file.write("  test:  loss %.4f perplexity %.4f \n" % (test_loss, test_ppx))
 
@@ -555,29 +555,15 @@ def test_model(scope, sess, train=False, valid=False, test=False):
                                                    batch_id=1)
     return encoder_final_state, loss,ppx
 
-def test_model_in_batches(scope, sess, train=False, valid=False, test=False):
+def test_model_in_batches(sess, model, data_set):
 
-    train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders / 2))
-    data_set = []
-    if train:
-        print("Computing loss on training data")
-        data_set = train_set
-    if valid:
-        data_set = valid_set
-        print("Computing loss on validation data")
-    if test:
-        data_set = test_set
-        print("Computing loss on test data")
-
-    model = create_seq2seq_model(sess, True, attention=FLAGS.attention, result_file=None,
-                                 same_param=True)
 
     for bucket_id in xrange(len(_buckets)):
         num_batches = int(len(data_set[bucket_id]) / FLAGS.batch_size)
         total_loss = 0.0
 
         for batch_id in xrange(num_batches):
-            if len(valid_set[bucket_id]) == 0:
+            if len(data_set[bucket_id]) == 0:
                 print("  eval: empty bucket %d" % (bucket_id))
                 continue
             encoder_final_state, loss, _ = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
