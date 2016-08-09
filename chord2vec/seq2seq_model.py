@@ -46,7 +46,7 @@ class Seq2SeqModel(object):
   def __init__(self, source_vocab_size, target_vocab_size, buckets, size,
                num_layers, max_gradient_norm, batch_size, learning_rate,
                learning_rate_decay_factor, adam_epsilon, GD, use_lstm=False,
-               num_samples=512, forward_only=False,attention=True):
+               num_samples=512, forward_only=False,attention=True, l2_regularization=False,weight_decay=0):
     """Create the model.
     Args:
       source_vocab_size: size of the source vocabulary.
@@ -78,6 +78,7 @@ class Seq2SeqModel(object):
     self.global_step = tf.Variable(0, trainable=False)
     self.adam_epsilon = adam_epsilon
     self.GD = GD
+    self.weight_decay = weight_decay
     # If we use sampled softmax, we need an output projection.
     output_projection = None
     softmax_loss_function = None
@@ -156,6 +157,17 @@ class Seq2SeqModel(object):
           self.target_weights, buckets, lambda x, y: seq2seq_f(x, y, False, attention),
           softmax_loss_function=softmax_loss_function)
 
+    if l2_regularization:
+        for b in xrange(len(buckets)):
+            tvars = tf.trainable_variables()
+
+            weight_decay = self.weight_decay
+            if weight_decay > 0:
+                self.cost_weight_decay = weight_decay * tf.add_n([tf.nn.l2_loss(v) for v in tvars], name='cost_weight_decay')
+                self.losses[b] = tf.add(self.losses[b], self.cost_weight_decay, name='cost_combined')
+
+
+
     # Gradients and SGD update operation for training the model.
     params = tf.trainable_variables()
 
@@ -229,6 +241,9 @@ class Seq2SeqModel(object):
     # Since our targets are decoder inputs shifted by one, we need one more.
     last_target = self.decoder_inputs[decoder_size].name
     input_feed[last_target] = np.zeros([self.batch_size], dtype=np.int32)
+
+
+
 
     # Output feed: depends on whether we do a backward step or not.
     if not forward_only:

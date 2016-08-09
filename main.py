@@ -28,8 +28,11 @@ from chord2vec import seq2seqs_model
 tf.app.flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
 tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.99,
                           "Learning rate decays by this much.")
+tf.app.flags.DEFINE_boolean("l2_reg", False, "Adds a L2 regularization term")
 tf.app.flags.DEFINE_float("adam_epsilon", 1e-6,
                           "Epsilon used for numerical stability in Adam optimizer.")
+tf.app.flags.DEFINE_float("reg_factor", 1.0,
+                          "Lambda for l2 regulariation.")
 tf.app.flags.DEFINE_float("max_gradient_norm", 5.0,
                           "Clip gradients to this norm.")
 tf.app.flags.DEFINE_integer("batch_size", 64,
@@ -284,7 +287,7 @@ def create_seq2seq_model(session, forward_only, attention, result_file=None, bat
 
     model = seq2seq_model.Seq2SeqModel(FLAGS.notes_range, FLAGS.notes_range, _buckets, FLAGS.num_units,
                          FLAGS.num_layers, FLAGS.max_gradient_norm, batch_size, FLAGS.learning_rate,
-                         FLAGS.learning_rate_decay_factor,FLAGS.adam_epsilon,FLAGS.GD, forward_only=forward_only, attention=attention)
+                         FLAGS.learning_rate_decay_factor,FLAGS.adam_epsilon,FLAGS.GD, forward_only=forward_only, attention=attention,l2_regularization=FLAGS.l2_reg,weight_decay=FLAGS.reg_factor)
 
     if not same_param:
         checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
@@ -570,7 +573,7 @@ def test_model_in_batches(sess, model, data_set,same_param=True):
             total_loss += loss
 
         avg_loss = total_loss / num_batches
-        avg_ppx = math.exp(avg_loss)
+        avg_ppx = math.exp(avg_loss) if loss < 300 else float('inf')
 
     return encoder_final_state, avg_loss, avg_ppx
 
