@@ -1,0 +1,577 @@
+Creating sequence-to-sequences 
+with attention mechanism 
+
+2016-08-09 01:12:38.541853
+ 1 layers of 2048 units  2 context size 128 bach-size. 
+ 128 batch size 2542 number of steps to complete one epoch 
+global step 100 learning rate 0.0010 step-time 0.15 loss 1.91  perplexity 6.72 
+global step 200 learning rate 0.0010 step-time 0.15 loss 1.47  perplexity 4.35 
+global step 300 learning rate 0.0010 step-time 0.15 loss 1.32  perplexity 3.73 
+global step 400 learning rate 0.0010 step-time 0.15 loss 1.29  perplexity 3.63 
+global step 500 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 800 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+global step 900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 1000 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 1100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 1200 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.42 
+global step 1300 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 1400 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.42 
+global step 1500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 1600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 1700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 1800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.47 
+global step 1900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 2000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 2100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 2200 learning rate 0.0010 step-time 0.15 loss 1.22  perplexity 3.39 
+global step 2300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 2400 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+global step 2500 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+epoch  0 finished 
+  train:  loss 1.2401 perplexity 3.4561 
+  eval:  loss 1.2471 perplexity 3.4802 
+global step 2600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 2700 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 2800 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 2900 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 3000 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.61 
+global step 3100 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 3200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 3300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 3400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 3500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 3600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 3700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 3800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 3900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 4000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 4100 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 4200 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 4300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 4400 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 4500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 4600 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 4700 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 4800 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 4900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 5000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+epoch  1 finished 
+  train:  loss 1.2690 perplexity 3.5572 
+  eval:  loss 1.2701 perplexity 3.5611 
+global step 5100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 5200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 5300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 5400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 5500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 5600 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+global step 5700 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+global step 5800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 5900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 6000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 6100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 6200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 6300 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 6400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.47 
+global step 6500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 6600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 6700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 6800 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+global step 6900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 7000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 7100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 7200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 7300 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 7400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 7500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 7600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+epoch  2 finished 
+  train:  loss 1.2426 perplexity 3.4645 
+  eval:  loss 1.2470 perplexity 3.4798 
+global step 7700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 7800 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+global step 7900 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 8000 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 8100 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 8200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 8300 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.54 
+global step 8400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 8500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 8600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 8700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 8800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 8900 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 9000 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+global step 9100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 9200 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 9300 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 9400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 9500 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 9600 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 9700 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 9800 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 9900 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 10000 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 10100 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+epoch  3 finished 
+  train:  loss 1.2535 perplexity 3.5027 
+  eval:  loss 1.2548 perplexity 3.5071 
+global step 10200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 10300 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 10400 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 10500 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 10600 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 10700 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 10800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 10900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 11000 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 11100 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 11200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 11300 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 11400 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 11500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 11600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 11700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 11800 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 11900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 12000 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 12100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 12200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 12300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 12400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.47 
+global step 12500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 12600 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.42 
+global step 12700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+epoch  4 finished 
+  train:  loss 1.2441 perplexity 3.4697 
+  eval:  loss 1.2501 perplexity 3.4906 
+global step 12800 learning rate 0.0010 step-time 0.15 loss 1.22  perplexity 3.39 
+global step 12900 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.42 
+global step 13000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 13100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 13200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 13300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.47 
+global step 13400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 13500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 13600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 13700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 13800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 13900 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.41 
+global step 14000 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 14100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 14200 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+global step 14300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 14400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 14500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 14600 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.42 
+global step 14700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 14800 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 14900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 15000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.47 
+global step 15100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 15200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+epoch  5 finished 
+  train:  loss 1.2347 perplexity 3.4374 
+  eval:  loss 1.2431 perplexity 3.4665 
+global step 15300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 15400 learning rate 0.0010 step-time 0.14 loss 1.22  perplexity 3.39 
+global step 15500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 15600 learning rate 0.0010 step-time 0.15 loss 1.22  perplexity 3.40 
+global step 15700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 15800 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 15900 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 16000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 16100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 16200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 16300 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 16400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 16500 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.54 
+global step 16600 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 16700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 16800 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.47 
+global step 16900 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.46 
+global step 17000 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 17100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 17200 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 17300 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 17400 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 17500 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.44 
+global step 17600 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 17700 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+epoch  6 finished 
+  train:  loss 1.2396 perplexity 3.4541 
+  eval:  loss 1.2447 perplexity 3.4717 
+global step 17800 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 17900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 18000 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.47 
+global step 18100 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 18200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 18300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 18400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 18500 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 18600 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 18700 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 18800 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 18900 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 19000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 19100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 19200 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 19300 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.61 
+global step 19400 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.60 
+global step 19500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 19600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 19700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 19800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 19900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 20000 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 20100 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 20200 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 20300 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+epoch  7 finished 
+  train:  loss 1.2455 perplexity 3.4746 
+  eval:  loss 1.2542 perplexity 3.5050 
+global step 20400 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 20500 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 20600 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 20700 learning rate 0.0010 step-time 0.14 loss 1.29  perplexity 3.62 
+global step 20800 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.54 
+global step 20900 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 21000 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 21100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 21200 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.59 
+global step 21300 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 21400 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.58 
+global step 21500 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 21600 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+global step 21700 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 21800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 21900 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 22000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 22100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 22200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 22300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 22400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.47 
+global step 22500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 22600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 22700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 22800 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+epoch  8 finished 
+  train:  loss 1.2629 perplexity 3.5356 
+  eval:  loss 1.2722 perplexity 3.5687 
+global step 22900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 23000 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 23100 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 23200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 23300 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 23400 learning rate 0.0010 step-time 0.15 loss 1.29  perplexity 3.64 
+global step 23500 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.60 
+global step 23600 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 23700 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 23800 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 23900 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 24000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 24100 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 24200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 24300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.51 
+global step 24400 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 24500 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 24600 learning rate 0.0010 step-time 0.14 loss 1.30  perplexity 3.66 
+global step 24700 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.61 
+global step 24800 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 24900 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 25000 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 25100 learning rate 0.0010 step-time 0.14 loss 1.29  perplexity 3.62 
+global step 25200 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 25300 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 25400 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.60 
+epoch  9 finished 
+  train:  loss 1.2487 perplexity 3.4858 
+  eval:  loss 1.2555 perplexity 3.5094 
+global step 25500 learning rate 0.0010 step-time 0.14 loss 1.23  perplexity 3.43 
+global step 25600 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 25700 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 25800 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 25900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 26000 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.61 
+global step 26100 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 26200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 26300 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.60 
+global step 26400 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.58 
+global step 26500 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 26600 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 26700 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 26800 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 26900 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 27000 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 27100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.58 
+global step 27200 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+global step 27300 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.47 
+global step 27400 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 27500 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 27600 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.45 
+global step 27700 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 27800 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 27900 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+epoch  10 finished 
+  train:  loss 1.2912 perplexity 3.6371 
+  eval:  loss 1.3016 perplexity 3.6751 
+global step 28000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 28100 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 28200 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 28300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 28400 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 28500 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.58 
+global step 28600 learning rate 0.0010 step-time 0.15 loss 1.29  perplexity 3.61 
+global step 28700 learning rate 0.0010 step-time 0.15 loss 1.29  perplexity 3.63 
+global step 28800 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 28900 learning rate 0.0010 step-time 0.15 loss 1.29  perplexity 3.64 
+global step 29000 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 29100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 29200 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 29300 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 29400 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 29500 learning rate 0.0010 step-time 0.14 loss 1.29  perplexity 3.62 
+global step 29600 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.60 
+global step 29700 learning rate 0.0010 step-time 0.14 loss 1.29  perplexity 3.61 
+global step 29800 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.61 
+global step 29900 learning rate 0.0010 step-time 0.15 loss 1.29  perplexity 3.64 
+global step 30000 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.61 
+global step 30100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 30200 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 30300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 30400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 30500 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+epoch  11 finished 
+  train:  loss 1.2758 perplexity 3.5817 
+  eval:  loss 1.2865 perplexity 3.6203 
+global step 30600 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 30700 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 30800 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 30900 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 31000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 31100 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 31200 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 31300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 31400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 31500 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 31600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 31700 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 31800 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 31900 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.58 
+global step 32000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 32100 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 32200 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 32300 learning rate 0.0010 step-time 0.14 loss 1.23  perplexity 3.44 
+global step 32400 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 32500 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 32600 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 32700 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 32800 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 32900 learning rate 0.0010 step-time 0.14 loss 1.23  perplexity 3.43 
+global step 33000 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+epoch  12 finished 
+  train:  loss 1.2512 perplexity 3.4944 
+  eval:  loss 1.2579 perplexity 3.5180 
+global step 33100 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 33200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 33300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 33400 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 33500 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 33600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 33700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 33800 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 33900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 34000 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 34100 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 34200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 34300 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.46 
+global step 34400 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 34500 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 34600 learning rate 0.0010 step-time 0.14 loss 1.23  perplexity 3.44 
+global step 34700 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.44 
+global step 34800 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 34900 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.47 
+global step 35000 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.43 
+global step 35100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 35200 learning rate 0.0010 step-time 0.14 loss 1.23  perplexity 3.41 
+global step 35300 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 35400 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 35500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+epoch  13 finished 
+  train:  loss 1.2560 perplexity 3.5112 
+  eval:  loss 1.2642 perplexity 3.5401 
+global step 35600 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.46 
+global step 35700 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 35800 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 35900 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 36000 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+global step 36100 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 36200 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 36300 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 36400 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 36500 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 36600 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 36700 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.46 
+global step 36800 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.45 
+global step 36900 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 37000 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 37100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 37200 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 37300 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 37400 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 37500 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 37600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 37700 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 37800 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 37900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 38000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 38100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+epoch  14 finished 
+  train:  loss 1.2650 perplexity 3.5430 
+  eval:  loss 1.2731 perplexity 3.5718 
+global step 38200 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.51 
+global step 38300 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 38400 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+global step 38500 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.59 
+global step 38600 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 38700 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.58 
+global step 38800 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 38900 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 39000 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 39100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 39200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 39300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 39400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 39500 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.45 
+global step 39600 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 39700 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 39800 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 39900 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 40000 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 40100 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.58 
+global step 40200 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 40300 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 40400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 40500 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 40600 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+epoch  15 finished 
+  train:  loss 1.2523 perplexity 3.4984 
+  eval:  loss 1.2617 perplexity 3.5315 
+global step 40700 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 40800 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 40900 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 41000 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 41100 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 41200 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.61 
+global step 41300 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 41400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 41500 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 41600 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 41700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 41800 learning rate 0.0010 step-time 0.14 loss 1.29  perplexity 3.61 
+global step 41900 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 42000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 42100 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.60 
+global step 42200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 42300 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.59 
+global step 42400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 42500 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.57 
+global step 42600 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.54 
+global step 42700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 42800 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 42900 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.47 
+global step 43000 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 43100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 43200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+epoch  16 finished 
+  train:  loss 1.2585 perplexity 3.5202 
+  eval:  loss 1.2630 perplexity 3.5360 
+global step 43300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 43400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 43500 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 43600 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 43700 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.58 
+global step 43800 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.55 
+global step 43900 learning rate 0.0010 step-time 0.14 loss 1.28  perplexity 3.61 
+global step 44000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 44100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 44200 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 44300 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 44400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 44500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 44600 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+global step 44700 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 44800 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 44900 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.51 
+global step 45000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 45100 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.50 
+global step 45200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 45300 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.46 
+global step 45400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 45500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 45600 learning rate 0.0010 step-time 0.15 loss 1.23  perplexity 3.41 
+global step 45700 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+epoch  17 finished 
+  train:  loss 1.3103 perplexity 3.7074 
+  eval:  loss 1.3165 perplexity 3.7303 
+global step 45800 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 45900 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 46000 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 46100 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 46200 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.48 
+global step 46300 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 46400 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 46500 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 46600 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.47 
+global step 46700 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 46800 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.54 
+global step 46900 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.48 
+global step 47000 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.53 
+global step 47100 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.50 
+global step 47200 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 47300 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.54 
+global step 47400 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 47500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 47600 learning rate 0.0010 step-time 0.15 loss 1.25  perplexity 3.49 
+global step 47700 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 47800 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 47900 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.46 
+global step 48000 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.57 
+global step 48100 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.54 
+global step 48200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.44 
+epoch  18 finished 
+  train:  loss 1.2518 perplexity 3.4967 
+  eval:  loss 1.2610 perplexity 3.5289 
+global step 48300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 48400 learning rate 0.0010 step-time 0.14 loss 1.23  perplexity 3.42 
+global step 48500 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 48600 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 48700 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.46 
+global step 48800 learning rate 0.0010 step-time 0.14 loss 1.24  perplexity 3.45 
+global step 48900 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 49000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 49100 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.55 
+global step 49200 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.56 
+global step 49300 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 49400 learning rate 0.0010 step-time 0.14 loss 1.25  perplexity 3.49 
+global step 49500 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.45 
+global step 49600 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 49700 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.60 
+global step 49800 learning rate 0.0010 step-time 0.14 loss 1.27  perplexity 3.56 
+global step 49900 learning rate 0.0010 step-time 0.15 loss 1.27  perplexity 3.54 
+global step 50000 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 50100 learning rate 0.0010 step-time 0.15 loss 1.28  perplexity 3.59 
+global step 50200 learning rate 0.0010 step-time 0.15 loss 1.24  perplexity 3.47 
+global step 50300 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+global step 50400 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.52 
+global step 50500 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.53 
+global step 50600 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.54 
+global step 50700 learning rate 0.0010 step-time 0.14 loss 1.26  perplexity 3.52 
+global step 50800 learning rate 0.0010 step-time 0.15 loss 1.26  perplexity 3.51 
+epoch  19 finished 
+  train:  loss 1.2408 perplexity 3.4584 
+  eval:  loss 1.2506 perplexity 3.4925 
+Reached the maximum number of epochs 20  stop trainig 
+best training loss 3.4374 best validation 3.4665 
+  test:  loss 1.2493 perplexity 3.4881 
