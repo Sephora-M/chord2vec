@@ -249,7 +249,6 @@ def read_all_data(context_size,full_context=False):
     return [all_train],[all_valid], [all_test]
 
 
-
 def _get_max_seqLength(chords):
     """Gives the maximum chord length
 	"""
@@ -410,7 +409,7 @@ def train():
 
             # Training loop.
             MAX_STRIKES = 3
-            step_time, ckpt_loss = 0.0, 0.0
+            step_time, ckpt_loss,epoch_loss = 0.0, 0.0,0.0
 
             steps_per_epoch = int(len(train_set[0])/FLAGS.batch_size)
             current_step  = 0
@@ -432,7 +431,7 @@ def train():
 
             result_dic = {}
 
-            while (not stop_training) and int(model.global_step.eval()/steps_per_epoch) < FLAGS.max_epochs:
+            while int(model.global_step.eval()/steps_per_epoch) < FLAGS.max_epochs:
                 # currently using only one bucket of size (max_seq_length, max_seq_length+2).
 
                 # Get a batch and make a step.
@@ -443,6 +442,7 @@ def train():
 
                 step_time += (time.time() - start_time) / FLAGS.steps_per_checkpoint
                 ckpt_loss += step_loss / FLAGS.steps_per_checkpoint
+                epoch_loss += step_loss/ steps_per_epoch
 
                 current_step += 1
                 train_batch_id +=1
@@ -469,11 +469,16 @@ def train():
                     print ("epoch  %d finished" % (current_epoch))
                     result_file.write("epoch  %d finished \n" % (current_epoch))
                     # Run evals on development set and print their perplexity.
+                    epoch_perplexity = math.exp(epoch_loss) if ckpt_loss < 300 else float('inf')
+                    previous_train_ppx.append(epoch_perplexity)
+                    print("  avg train batch:  loss %.2f perplexity %.2f" % (epoch_loss, epoch_perplexity))
+                    result_file.write("  avg train batch:  loss %.4f perplexity %.4f \n" % (epoch_loss, epoch_perplexity))
+                    epoch_loss = 0.0
 
-                    _,train_loss, train_ppx = test_model_in_batches(sess, model, train_set)
-                    previous_train_ppx.append(train_ppx)
-                    print("  train:  loss %.4f perplexity %.4f" % (train_loss, train_ppx))
-                    result_file.write("  train:  loss %.4f perplexity %.4f \n" % (train_loss, train_ppx))
+                    #_,train_loss, train_ppx = test_model_in_batches(sess, model, train_set)
+                    #previous_train_ppx.append(train_ppx)
+                    #print("  train:  loss %.4f perplexity %.4f" % (train_loss, train_ppx))
+                    #result_file.write("  train:  loss %.4f perplexity %.4f \n" % (train_loss, train_ppx))
 
                     _,valid_loss, valid_ppx = test_model_in_batches(sess, model, valid_set)
 
@@ -483,32 +488,21 @@ def train():
                     previous_eval_ppx.append(valid_ppx)
 
                     # Stopping criterion
-                    margin = 0.001
-                    improve_valid = previous_eval_ppx[-1] < best_val_loss + margin
+                    improve_valid = previous_eval_ppx[-1] < best_val_loss
+                    improve_train = previous_train_ppx[-1] < best_train_loss
+                    best_val_epoch = -1
                     if improve_valid:
                         strikes = 0
                         best_val_loss = previous_eval_ppx[-1]
+                        best_val_epoch = current_epoch
                         # Save checkpoint.
                         model.saver.save(sess, checkpoint_path, global_step=model.global_step)
-
-                    improve_train =  previous_train_ppx[-1] < best_train_loss + margin
                     if improve_train:
                         best_train_loss = previous_train_ppx[-1]
 
-                    if improve_train and not improve_valid:
-                        strikes +=1
-                        print("strikes : %d" % strikes )
-                        if strikes > MAX_STRIKES:
-                            stop_training = True
-                            print("Stopped training after %d epochs" % (int(model.global_step.eval()/steps_per_epoch)))
-                            result_file.write("Stopped training after %d epochs\n" % int((model.global_step.eval() / steps_per_epoch)))
-
                     sys.stdout.flush()
-                    train_batch_id = 1
+                    train_batch_id =1
                     current_epoch +=1
-            if not stop_training:
-                print("Reached the maximum number of epochs %d  stop trainig"  % (FLAGS.max_epochs))
-                result_file.write("Reached the maximum number of epochs %d  stop trainig \n" % (FLAGS.max_epochs))
 
             print("best training  %.4f best validation %.4f \n" % (best_train_loss, best_val_loss) )
             result_file.write("best training loss %.4f best validation %.4f \n" % (best_train_loss, best_val_loss))
@@ -517,7 +511,7 @@ def train():
             print("END of training")
             print("Model evaluation on test data...")
 
-            _, test_loss, test_ppx = test_model_in_batches(sess, model, test_set)
+            _, test_loss, test_ppx = test_model_in_batches(sess, model, test_set,same_param=False)
             print("  test:  loss %.4f perplexity %.4f" % (test_loss, test_ppx))
             result_file.write("  test:  loss %.4f perplexity %.4f \n" % (test_loss, test_ppx))
 
@@ -525,13 +519,13 @@ def train():
             result_dic['train_losses'] = previous_losses
             result_dic['train_ppx'] = previous_train_ppx
             result_dic['valid_ppx'] = previous_eval_ppx
-            result_dic['strikes'] = strikes
-            result_dic['epoch'] = int(model.global_step.eval()/steps_per_epoch)
+            result_dic['epoch'] = best_val_epoch
 
             pickle.dump(result_dic,open(FLAGS.train_dir + '/results.pickle','wb'))
             result_file.close()
 
-def test_model(scope, sess, train=False, valid=False, test=False):
+def test_model(scope, sess, same_param=True,train=False, valid=False, test=False):
+    #TODO: , l2 reg, remove max epoch
     train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders / 2))
     data_set = []
     if train:
@@ -543,7 +537,7 @@ def test_model(scope, sess, train=False, valid=False, test=False):
 
 
     batch_size = len(data_set[0])
-    model = create_seq2seq_model(sess, True,  attention=FLAGS.attention, result_file=None, batch_size=batch_size, same_param=True)
+    model = create_seq2seq_model(sess, True,  attention=FLAGS.attention, result_file=None, batch_size=batch_size, same_param=same_param)
 
     for bucket_id in xrange(len(_buckets)):
 
@@ -555,7 +549,12 @@ def test_model(scope, sess, train=False, valid=False, test=False):
                                                    batch_id=1)
     return encoder_final_state, loss,ppx
 
-def test_model_in_batches(sess, model, data_set):
+def test_model_in_batches(sess, model, data_set,same_param=True):
+
+    if not same_param:
+        checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
+        model.saver.restore(sess, checkpoint.model_checkpoint_path)
+
     for bucket_id in xrange(len(_buckets)):
         num_batches = int(len(data_set[bucket_id]) / FLAGS.batch_size)
         total_loss = 0.0
