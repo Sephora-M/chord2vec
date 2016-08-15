@@ -52,11 +52,11 @@ tf.app.flags.DEFINE_boolean("all_data_sets", False, "Uses all 4 data sets for tr
 tf.app.flags.DEFINE_boolean("GD", False, "Uses Gradient Descent with adaptive learning rate")
 tf.app.flags.DEFINE_string("train_dir", "unit1024layer2", "Training directory.")
 
-tf.app.flags.DEFINE_integer("max_train_data_size", 1000,
+tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
-tf.app.flags.DEFINE_integer("max_valid_data_size", 500,
+tf.app.flags.DEFINE_integer("max_valid_data_size", 0,
                             "Limit on the size of validation data (0: no limit).")
-tf.app.flags.DEFINE_integer("max_test_data_size", 500,
+tf.app.flags.DEFINE_integer("max_test_data_size", 0,
                             "Limit on the size of validation data (0: no limit).")
 tf.app.flags.DEFINE_integer("max_epochs", 3,
                             "Maximium number of epochs for trainig.")
