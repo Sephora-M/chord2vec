@@ -981,10 +981,12 @@ def model_with_buckets(encoder_inputs, decoder_inputs, targets, weights,
                                     decoder_inputs[:bucket[1]])
         outputs.append(bucket_outputs)
         encoder_final_states.append(bucket_encoder_final_state)
-        original_losses.append(bucket_outputs)
         encoder_final_states.append(bucket_encoder_final_state)
         if per_example_loss:
           losses.append(sequence_loss_by_example(
+              outputs[-1], targets[:bucket[1]], weights[:bucket[1]],
+              softmax_loss_function=softmax_loss_function))
+          original_losses.append(sequence_loss_by_example(
               outputs[-1], targets[:bucket[1]], weights[:bucket[1]],
               softmax_loss_function=softmax_loss_function))
         else:
