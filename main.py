@@ -18,9 +18,10 @@ from six.moves import xrange
 import tensorflow as tf
 
 from tensorflow.python.ops import variable_scope as vs
-
-
-from tensorflow.models.rnn.translate import data_utils
+PAD_ID = 0
+GO_ID = 1
+EOS_ID = 2
+UNK_ID = 3
 
 from chord2vec import seq2seq_model
 from chord2vec import seq2seqs_model
@@ -37,27 +38,27 @@ tf.app.flags.DEFINE_float("max_gradient_norm", 5.0,
                           "Clip gradients to this norm.")
 tf.app.flags.DEFINE_integer("batch_size", 64,
                             "Batch size to use during training.")
-tf.app.flags.DEFINE_integer("num_units", 1024, "Size of each model layer.")
-tf.app.flags.DEFINE_integer("num_layers", 2, "Number of layers in the model.")
-tf.app.flags.DEFINE_integer("notes_range", 109, "Number of notes in the vocabulary.")
+tf.app.flags.DEFINE_integer("num_units", 8, "Size of each model layer.")
+tf.app.flags.DEFINE_integer("num_layers", 1, "Number of layers in the model.")
+tf.app.flags.DEFINE_integer("notes_range", 92, "Number of notes in the vocabulary.")
 
 tf.app.flags.DEFINE_boolean("attention", True, "Build sequence-to-sequence model with attention mechanism")
 tf.app.flags.DEFINE_boolean("multiple_decoders", False, "Build sequence-to-sequences model")
 tf.app.flags.DEFINE_integer("num_decoders", 2, "Number of decoders, i.e. number of context chords")
 
-tf.app.flags.DEFINE_string("data_file", "reduced_JSB.pickle", "Data file name")
+tf.app.flags.DEFINE_string("data_file", "JSB_Chorales.pickle", "Data file name")
 tf.app.flags.DEFINE_boolean("all_data_sets", False, "Uses all 4 data sets for training")
 
 tf.app.flags.DEFINE_boolean("GD", False, "Uses Gradient Descent with adaptive learning rate")
 tf.app.flags.DEFINE_string("train_dir", "unit1024layer2", "Training directory.")
 
-tf.app.flags.DEFINE_integer("max_train_data_size", 0,
+tf.app.flags.DEFINE_integer("max_train_data_size", 1000,
                             "Limit on the size of training data (0: no limit).")
-tf.app.flags.DEFINE_integer("max_valid_data_size", 0,
+tf.app.flags.DEFINE_integer("max_valid_data_size", 500,
                             "Limit on the size of validation data (0: no limit).")
-tf.app.flags.DEFINE_integer("max_test_data_size", 0,
+tf.app.flags.DEFINE_integer("max_test_data_size", 500,
                             "Limit on the size of validation data (0: no limit).")
-tf.app.flags.DEFINE_integer("max_epochs", 50,
+tf.app.flags.DEFINE_integer("max_epochs", 3,
                             "Maximium number of epochs for trainig.")
 tf.app.flags.DEFINE_integer("steps_per_checkpoint", 100,
                             "How many training steps to do per checkpoint.")
@@ -135,7 +136,7 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
                 neighborhood.append([])
 
             for context_chord in neighborhood:
-                context_chord.append(data_utils.EOS_ID)
+                context_chord.append(EOS_ID)
 
             chord_and_context.append((list(chords_seq[i]), neighborhood))
 
@@ -171,13 +172,13 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
             if (m_before > 0):
                 for context in map(list, chords_seq[(i - m_before):i]):
                     c_j = list(context)
-                    c_j.append(data_utils.EOS_ID)
+                    c_j.append(EOS_ID)
                     chord_and_context.append((list(chords_seq[i]), c_j))
             if (m_after > 0):
 
                 for context in map(list, chords_seq[(i + 1):(i + m_after + 1)]):
                     c_j = list(context)
-                    c_j.append(data_utils.EOS_ID)
+                    c_j.append(EOS_ID)
                     chord_and_context.append((list(chords_seq[i]), c_j))
 
             m_before = context_size
@@ -200,8 +201,8 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
                 augmented_data.append([])
                 for chord in s:
                     if chord:
-                        if min(chord) + t >= 21 and max(chord) + t <= 108:
-                            augmented_data[-1].append(map(add, chord, [t] * len(chord)))
+                        if min(chord) + t >= 4 and max(chord) + t <= 92:
+                            augmented_data[-1].append( list(map(add, chord, [t] * len(chord))))
 
         return augmented_data
 
@@ -210,6 +211,8 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
     augmented_data = augment_data(train_data, theta)
 
     for seq in augmented_data:
+        for i in range(len(seq)):
+            seq[i] = list(map(add, seq[i], [-17] * len(seq[i])))
         if full_context:
             train_chords_and_contexts.extend(get_full_context(seq))
         else:
@@ -219,6 +222,8 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
     augmented_data = augment_data(valid_data, theta)
 
     for seq in augmented_data:
+        for i in range(len(seq)):
+            seq[i] = list(map(add, seq[i], [-17] * len(seq[i])))
         if full_context:
             valid_chords_and_contexts.extend(get_full_context(seq))
         else:
@@ -227,6 +232,8 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
     augmented_data = augment_data(test_data, theta)
 
     for seq in augmented_data:
+        for i in range(len(seq)):
+            seq[i] = list(map(add, seq[i], [-17] * len(seq[i])))
         if full_context:
             test_chords_and_contexts.extend(get_full_context(seq))
         else:
@@ -556,6 +563,7 @@ def test_model_in_batches(sess, model, data_set,same_param=True):
 
     if not same_param:
         checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
+        print('testing on the validated model..')
         model.saver.restore(sess, checkpoint.model_checkpoint_path)
 
     for bucket_id in xrange(len(_buckets)):
@@ -601,13 +609,13 @@ def _get_batch_make_step(sess, model, multiple_decoders, data_set, num_decoders,
         encoder_inputs, decoder_inputs, target_weights = model.get_batch(
                 data_set, num_decoders, bucket_id)
 
-        encoder_final_state, loss, _ = model.step(sess, encoder_inputs, num_decoders,
+        encoder_final_state,_, loss, _ = model.step(sess, encoder_inputs, num_decoders,
                                   decoder_inputs, target_weights, bucket_id, forward_only)
     else:
 
         encoder_inputs, decoder_inputs, target_weights = model.get_batch(
                 data_set, bucket_id)
-        encoder_final_state, loss, _ = model.step(sess, encoder_inputs,
+        encoder_final_state,_, loss, _ = model.step(sess, encoder_inputs,
                                 decoder_inputs, target_weights, bucket_id, forward_only)
     ppx = math.exp(loss) if loss < 300 else float('inf')
 
@@ -623,13 +631,13 @@ def _get_test_batch_make_step(sess, model, multiple_decoders, data_set, num_deco
         encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
                 data_set, num_decoders, bucket_id, batch_id)
 
-        encoder_final_state, loss, _ = model.step(sess, encoder_inputs, num_decoders,
+        encoder_final_state, _, loss, _ = model.step(sess, encoder_inputs, num_decoders,
                                   decoder_inputs, target_weights, bucket_id, forward_only)
     else:
 
         encoder_inputs, decoder_inputs, target_weights = model.get_test_batch(
                 data_set, bucket_id, batch_id)
-        encoder_final_state, loss, _ = model.step(sess, encoder_inputs,
+        encoder_final_state, _, loss, _ = model.step(sess, encoder_inputs,
                                 decoder_inputs, target_weights, bucket_id, forward_only)
     ppx = math.exp(loss) if loss < 300 else float('inf')
     if not forward_only:

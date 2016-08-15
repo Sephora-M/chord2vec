@@ -61,6 +61,8 @@ from __future__ import print_function
 from six.moves import xrange  # pylint: disable=redefined-builtin
 from six.moves import zip     # pylint: disable=redefined-builtin
 
+import copy
+
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import array_ops
@@ -952,6 +954,7 @@ def model_with_buckets(encoder_inputs, decoder_inputs, targets, weights,
 
   all_inputs = encoder_inputs + decoder_inputs + targets + weights
   losses = []
+  original_losses = []
   outputs = []
   encoder_final_states = []
   with ops.op_scope(all_inputs, name, "model_with_buckets"):
@@ -966,9 +969,17 @@ def model_with_buckets(encoder_inputs, decoder_inputs, targets, weights,
           losses.append(sequence_loss_by_example(
               outputs[-1], targets[:bucket[1]], weights[:bucket[1]],
               softmax_loss_function=softmax_loss_function))
+
+          original_losses.append(sequence_loss_by_example(
+              outputs[-1], targets[:bucket[1]], weights[:bucket[1]],
+              softmax_loss_function=softmax_loss_function))
         else:
+
           losses.append(sequence_loss(
               outputs[-1], targets[:bucket[1]], weights[:bucket[1]],
               softmax_loss_function=softmax_loss_function))
+          original_losses.append(sequence_loss(
+             outputs[-1], targets[:bucket[1]], weights[:bucket[1]],
+                softmax_loss_function=softmax_loss_function))
 
-  return outputs, losses, encoder_final_states
+  return outputs, losses, original_losses, encoder_final_states

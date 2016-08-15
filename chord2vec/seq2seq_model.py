@@ -140,7 +140,7 @@ class Seq2SeqModel(object):
 
     # Training outputs and losses.
     if forward_only:
-      self.outputs, self.losses, self.encoder_final_state = seq2seq.model_with_buckets(
+      self.outputs, self.losses, self.original_losses, self.encoder_final_state = seq2seq.model_with_buckets(
           self.encoder_inputs, self.decoder_inputs, targets,
           self.target_weights, buckets, lambda x, y: seq2seq_f(x, y, True, attention),
           softmax_loss_function=softmax_loss_function)
@@ -152,7 +152,7 @@ class Seq2SeqModel(object):
               for output in self.outputs[b]
           ]
     else:
-      self.outputs, self.losses, self.encoder_final_state = seq2seq.model_with_buckets(
+      self.outputs, self.losses, self.original_losses, self.encoder_final_state = seq2seq.model_with_buckets(
           self.encoder_inputs, self.decoder_inputs, targets,
           self.target_weights, buckets, lambda x, y: seq2seq_f(x, y, False, attention),
           softmax_loss_function=softmax_loss_function)
@@ -250,17 +250,18 @@ class Seq2SeqModel(object):
 
       output_feed = [self.updates[bucket_id],  # Update Op that does SGD.
                      self.gradient_norms[bucket_id],  # Gradient norm.
-                     self.losses[bucket_id]]  # Loss for this batch.
+                     self.losses[bucket_id],  # Loss for this batch.
+                     self.original_losses[bucket_id]]
     else:
-      output_feed = [self.losses[bucket_id], self.encoder_final_state[bucket_id]]  # Loss for this batch.
+      output_feed = [self.losses[bucket_id], self.encoder_final_state[bucket_id],self.original_losses[bucket_id]]  # Loss for this batch.
       for l in xrange(decoder_size):  # Output logits.
         output_feed.append(self.outputs[bucket_id][l])
 
     outputs = session.run(output_feed, input_feed)
     if not forward_only:
-      return outputs[1], outputs[2], None  # Gradient norm, loss, no outputs.
+      return outputs[1], outputs[2], outputs[3], None  # Gradient norm, reg loss, original loss, no output.
     else:
-      return outputs[1], outputs[0], outputs[1:]  # Encorder final state, loss, outputs.
+      return outputs[1], outputs[0], outputs[2], outputs[3:]  # Encorder final state, reg loss, original loss,outputs.
 
   def get_batch(self, data, bucket_id):
     """Get a random batch of data from the specified bucket, prepare for step.
