@@ -134,4 +134,4 @@ def scipyoptimize(model, train_set, test_set, cost_function, method="L-BFGS-B", 
         print("[training]   Completed with error %.4g." % results.fun)
 
         if save_trained_model:
-            model.save_model_to_file()
+            model.save_model()
