@@ -30,7 +30,7 @@ class LinearModel1:
         # total number of weights
         self.num_weights = self.num_inputs * self.layers[0][0] + sum((self.layers[i][0] ) * layer[0] for i, layer in enumerate(self.layers[1:]))
 
-        # Initialize the network with new randomized weights
+        # Initialize the model with new randomized weights
         self.set_weights(np.random.uniform(-self.sigma, self.sigma, size=(self.num_weights,)))
 
 
@@ -58,7 +58,7 @@ class LinearModel1:
 
     def get_weights(self, ):
         """
-        Flattents the weight matrix and returns a vector of all weights in the network
+        Flattents the weight matrix and returns a vector of all weights in the model
         """
         return [w for l in self.weights for w in l.flat]
 
@@ -158,7 +158,7 @@ class LinearModel1:
         Returns:
 
         """
-        output = input_values
+        output = fct.normalize_function(input_values)
 
         if not forward_only:
             derivatives = []  # collection of the derivatives of the act functions
@@ -179,14 +179,16 @@ class LinearModel1:
 
         return output
 
+    def perplexity(self, input_values, forward_only=True):
 
+        print("Evaluating on test data ")
 
-    def save_network(self, filename="network0.pickle"):
+    def save_model(self, filename="linear1.pickle"):
         """
-        Save the parameters of the network
+        Save the parameters of the model
         """
 
-        if filename == "network0.pickle":
+        if filename == "model0.pickle":
             while os.path.exists(os.path.join(os.getcwd(), filename)):
                 filename = re.sub('\d(?!\d)', lambda x: str(int(x.group(0)) + 1), filename)
 
@@ -201,19 +203,19 @@ class LinearModel1:
 
 
     @staticmethod
-    def load_network(filename):
+    def load_model(filename):
         """
-        Load the complete configuration of a previously stored network.
+        Load the complete configuration of a previously stored model.
         """
-        network = LinearModel1()
+        model = LinearModel1()
 
         with open(filename, 'rb') as file:
             params_dict = pickle.load(file)
 
-            network.num_inputs = params_dict["num_inputs"]
-            network.num_weights = params_dict["num_weights"]
-            network.layers = params_dict["layers"]
-            network.weights = params_dict["weights"]
+            model.num_inputs = params_dict["num_inputs"]
+            model.num_weights = params_dict["num_weights"]
+            model.layers = params_dict["layers"]
+            model.weights = params_dict["weights"]
 
-        return network
+        return model
 

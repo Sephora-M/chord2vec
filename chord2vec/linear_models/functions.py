@@ -53,5 +53,6 @@ def normalize_function(signal, derivative=False):
         # Return the partial derivation of the activation function
         return np.ones( signal.shape )
     else:
-        # Return the activation signal
-        return signal
+        # Return the normalized  signal
+
+        return np.array([s/ (LA.norm(s, ord=1)) if (LA.norm(s, ord=1))>0 else s for s in signal])
