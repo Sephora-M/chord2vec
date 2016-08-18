@@ -219,9 +219,7 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
             train_chords_and_contexts.extend(get_contexts(seq))
 
 
-    augmented_data = augment_data(valid_data, theta)
-
-    for seq in augmented_data:
+    for seq in valid_data:
         for i in range(len(seq)):
             seq[i] = list(map(add, seq[i], [-17] * len(seq[i])))
         if full_context:
@@ -229,9 +227,8 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
         else:
             valid_chords_and_contexts.extend(get_contexts(seq))
 
-    augmented_data = augment_data(test_data, theta)
 
-    for seq in augmented_data:
+    for seq in test_data:
         for i in range(len(seq)):
             seq[i] = list(map(add, seq[i], [-17] * len(seq[i])))
         if full_context:
