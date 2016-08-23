@@ -73,6 +73,12 @@ FLAGS = tf.app.flags.FLAGS
 
 _buckets = [(4, 6)]
 
+if FLAGS.data_file == "Nottingham.pickle":
+    _buckets = [(9,11)]
+if FLAGS.data_file == "Piano-midi.de.pickle":
+    _buckets = [(12,14)]
+if FLAGS.data_file == "MuseData.pickle":
+    _buckets = [(14,16)]
 
 def read_data(file_name, context_size, full_context=False, training_data=True,
               valid_data=False, test_data=False):
