@@ -77,9 +77,9 @@ if FLAGS.data_file == "Nottingham.pickle":
     _buckets = [(9,11)]
 if FLAGS.data_file == "Piano-midi.de.pickle":
     _buckets = [(12,14)]
-if FLAGS.data_file == "MuseData.pickle":
+if FLAGS.data_file == "MuseData.pickle" or FLAGS.all_data_sets:
     _buckets = [(14,16)]
-
+    
 def read_data(file_name, context_size, full_context=False, training_data=True,
               valid_data=False, test_data=False):
     """"Load file_name and build (inputs, targets) pairs
@@ -207,7 +207,7 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
                 augmented_data.append([])
                 for chord in s:
                     if chord:
-                        if min(chord) + t >= 4 and max(chord) + t <= 92:
+                        if min(chord)-17 + t >= 4 and max(chord)-17 + t <= 92:
                             augmented_data[-1].append( list(map(add, chord, [t] * len(chord))))
 
         return augmented_data
