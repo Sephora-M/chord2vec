@@ -20,7 +20,8 @@ from tensorflow.python.ops import gen_math_ops
 #
 # test_set = [[ [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
 #            [ [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
-# data_size = len(train_set[0])
+#data_size = len(train_set[0])
+
 # Parameters
 learning_rate = 0.001
 training_epochs = 500
@@ -38,15 +39,11 @@ target = tf.placeholder("float", [None, NUM_NOTES])
 weights = {
     'M1': tf.Variable(tf.random_normal([NUM_NOTES, D])),
     'M2': tf.Variable(tf.random_normal([D,NUM_NOTES])),
-    # 'hidden2': tf.Variable(tf.random_normal([D, NUM_NOTES])),
-    # 'pad' : tf.Variable(tf.constant(ones_triangular(NUM_NOTES).tolist()),trainable=False),
     'W': tf.Variable(tf.random_normal([D, NUM_NOTES]))
 }
 
 bias = {
-    #     'hidden1': tf.Variable(tf.random_normal([D])),
     'M2': tf.Variable(tf.random_normal([D])),
-    #     'out': tf.Variable(tf.random_normal([NUM_NOTES]))
 }
 def ones_triangular(dim):
     num_units = dim
@@ -61,19 +58,16 @@ def extend_vector(input,r,batch_size):
     """
     [a,b,c] --> [[a,a,a],[b,b,b],[c,c,c]] if D=3
     """
-    #return list(map(lambda x: tf.matmul([[1.]]*r,[x]), input))
     return tf.batch_matmul(tf.ones([batch_size, r, 1]), tf.expand_dims(input, 1))
 
 def mask(input, W, r=D):
     inputs = extend_vector(input,r,batch_size)
     return  tf.squeeze(tf.mul(inputs, [W]))
-    #return list(map(lambda x: tf.mul(x,M), inputs))
 
 def cumsum_weights(input, W, r=D):
     masked=mask(input,W,r)
     triangle = ones_triangular(NUM_NOTES)
     size = batch_size
-    #return list(map(lambda x: tf.matmul(x, triangle), masked))
     return tf.batch_matmul(masked, np.array([triangle]*size))
 
 
@@ -100,12 +94,19 @@ def nade_like(input, target, weights, bias):
 
     hidden = hidden01 + hidden02
 
-    #hidden02 = tf.matmul(norm_cumsum(target), weights['M2'])
-    #hidden02 = (hidden02) + bias['M2']
+    y = tf.zeros([1], tf.float32)
+    split = tf.split(0, batch_size, hidden)
 
-    hidden = hidden01 + hidden02
+    y = tf.batch_matmul(tf.expand_dims(tf.transpose(tf.squeeze(split[0])), 1), tf.expand_dims(tf.transpose(weights['W']), 2))
 
-    output = tf.reduce_sum(hidden,1)#tf.matmul(hidden, weights['W'])
+    for i in range(1, len(split)):
+        y = tf.concat(0, [y, tf.batch_matmul(tf.expand_dims(tf.transpose(tf.squeeze(split[i])), 1),
+                                                     tf.expand_dims(tf.transpose(weights['W']), 2))])
+    y = tf.squeeze(y)
+
+    output = tf.reshape(y,[batch_size,NUM_NOTES])
+        #tf.batch_matmul(tf.transpose(hidden,perm=[0, 2, 1]),[weights['W']]*batch_size)
+    #tf.matmul(hidden, weights['W'])
     return output
 
 def norm_cumsum(target):
@@ -120,7 +121,7 @@ def cumsum(target):
 
 def get_batch(data_set,id, stoch=False):
     if stoch:
-        transpose_data_set = list(map(list, zip(*train_set)))
+        transpose_data_set = list(map(list, zip(*data_set)))
         batch = random.sample(transpose_data_set, batch_size)
         batch_input,batch_target = list(map(list, zip(*batch)))
         return batch_input,batch_target
@@ -142,7 +143,7 @@ def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None
     pred = nade_like(input, target, weights,bias)
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(pred, target), 1))
-    optimizer = tf.train.AdamOptimizer(epsilon=1e-03, learning_rate=learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(epsilon=1e-06, learning_rate=learning_rate).minimize(cost)
     # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
     # Initializing the variables
     init = tf.initialize_all_variables()
@@ -168,14 +169,21 @@ def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None
         valid_chords = dic['v']
 
         train_set = dp.generate_binary_vectors(train_chords)
-        input_train, target_train = train_set
-        data_size = len(train_set[0])
+        #input_train, target_train = train_set
         test_set = dp.generate_binary_vectors(test_chords)
         valid_set = dp.generate_binary_vectors(valid_chords)
-        input_valid, target_valid = valid_set
+        #input_valid, target_valid = valid_set
 
-        #input_valid, target_valid = test_set
-        #input_train, target_train = train_set
+        data_size = len(train_set[0])
+        data_size_valid = len(valid_set[0])
+        data_size_te = len(test_set[0])
+
+        total_batch = int(data_size / batch_size)
+        total_batch_valid = int(data_size_valid / batch_size)
+        total_batch_test = int(data_size_te / batch_size)
+        # valid_set=test_set
+        # input_valid, target_valid = valid_set
+        # input_train, target_train = train_set
 
         batch_vx, batch_vy = get_batch(valid_set, 0)
         best_val_loss = sess.run(cost, feed_dict={input: batch_vx, target: batch_vy})
@@ -187,7 +195,7 @@ def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None
         strikes = 0
         for epoch in range(training_epochs):
             avg_cost = 0.
-            total_batch = int(data_size / batch_size)
+
             # Loop over all batches
             for i in range(total_batch):
                 batch_x, batch_y = get_batch(train_set, i)
@@ -202,10 +210,14 @@ def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None
                 print("Epoch:", '%d' % (epoch + 1), "cost=", \
                       "{:.9f}".format(avg_cost))
 
-            batch_vx, batch_vy = get_batch(valid_set, 1)
-            c_valid = sess.run(cost, feed_dict={input: batch_vx, target: batch_vy})
-            print("Valid error %4f" % (c_valid))
-            previous_eval_loss.append(c_valid)
+            avg_cost_valid = 0.
+            for batch_id in range(total_batch_valid):
+                batch_vx, batch_vy = get_batch(valid_set, batch_id)
+                c_valid = sess.run(cost, feed_dict={input: batch_vx, target: batch_vy})
+                avg_cost_valid += c_valid / total_batch_valid
+
+            print("Valid error %4f" % (avg_cost_valid))
+            previous_eval_loss.append(avg_cost_valid)
 
             improve_valid = previous_eval_loss[-1] < best_val_loss
 
@@ -216,20 +228,23 @@ def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None
                 saver.save(sess, checkpoint_path, global_step=epoch)
             else:
                 strikes += 1
-            if strikes > 3:
+            if strikes > 5:
                 break
         print("Optimization Finished!")
 
-        input_test, target_test = test_set
-        batch_tex, batch_tey = get_batch(test_set, 1)
-        c_test = sess.run(cost, feed_dict={input: batch_tex, target: batch_tey})
+        #input_test, target_test = test_set
+        avg_cost_test = 0.
+        for batch_id in range(total_batch_test):
+            batch_tex, batch_tey = get_batch(test_set, 0)
+            c_test = sess.run(cost, feed_dict={input: batch_tex, target: batch_tey})
+            avg_cost_test += c_test / total_batch_test
 
-        batch_x, batch_y = get_batch(train_set, 0)
-        c_train = sess.run(cost, feed_dict={input: batch_x, target: batch_y})
+        #batch_x, batch_y = get_batch(train_set, 0)
+        #c_train = sess.run(cost, feed_dict={input: batch_x, target: batch_y})
 
-        print("Train error %.9f" % (c_train))
+        #print("Train error %.9f" % (c_train))
         print("Best validation %.9f" % (best_val_loss))
-        print("Test error %.9f" % (c_test))
+        print("Test error %.9f" % (avg_cost_test))
 
 def print_error(sess, weights=None, bias=None,checkpoint_path="save_models/new", num_notes=None, d=None):
 
