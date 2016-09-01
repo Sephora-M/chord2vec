@@ -9,7 +9,7 @@ from chord2vec.linear_models import functions as fct
 from chord2vec.linear_models import data_processing as dp
 
 NUM_NOTES = 88
-D = 88
+D = 512
 
 
 default = {
@@ -54,7 +54,19 @@ class LinearModel1:
 
             previous_shape = n_neurons
             start = stop
+        self.weights[2] = np.multiply(fct.zero_padding(self.weights[2]), self.weights[2])
 
+    def force_zero_weights(self, id_layer):
+        """
+        forces some weights in the layer id_layer to be zero
+        Args:
+            id_layer:
+
+        Returns:
+
+        """
+
+        return id_layer
 
     def get_weights(self, ):
         """
@@ -102,9 +114,7 @@ class LinearModel1:
 
                 delta = weight_delta * derivatives[i - 1]
 
-
         return np.hstack(reversed(deltas))
-
 
 
     def check_gradient(self, trainingset, cost_function, epsilon=1e-6):
@@ -123,12 +133,20 @@ class LinearModel1:
             df = np.zeros(init_weights.shape)
             p = np.zeros(init_weights.shape)
             for i in xrange(self.num_weights):
-                p[i] += epsilon
+                p[i] = epsilon
                 fx_right = self.error(init_weights + p, [input, target], cost_function)
-                fx_left = self.error(init_weights , [input, target], cost_function)
+                fx_left = self.error(init_weights - p, [input, target], cost_function)
                 p[i] = 0
-                df[i] = (fx_right - fx_left) / (epsilon)
+                df[i] = (fx_right - fx_left) / (2 * epsilon)
+
             return df
+            # for i in xrange(self.num_weights):
+            #     p[i] += epsilon
+            #     fx_right = self.error(init_weights + p, [input[:1], target[:1]], cost_function)
+            #     fx_left = self.error(init_weights , [input[:1], target[:1]], cost_function)
+            #     p[i] = 0
+            #     df[i] = (fx_right - fx_left) / (epsilon)
+            # return df
 
         numeric_gradient = numerical_grad(initial_weights,inputs,targets,cost_function,epsilon)
 
@@ -143,6 +161,8 @@ class LinearModel1:
 
         if not ratio < 1e-6:
             print("WARNING: The numeric gradient check failed! Analytical gradient differed by %g from the numerical." % ratio)
+            print("analytical gradient : %.4f" % np.linalg.norm(analytic_gradient))
+            print("numerical gradient : %.4f" % np.linalg.norm(numeric_gradient))
 
         else:
             print("Numeric gradient check passed :)")
@@ -151,7 +171,7 @@ class LinearModel1:
 
 
 
-    def update(self, input_values, forward_only=True):
+    def update2(self, input_values, forward_only=True):
         """
         Forward pass. If forward_only is false, then return the output at each layer and the derivatives,
         otherwise returns the final output only.
@@ -159,7 +179,7 @@ class LinearModel1:
 
         """
         output = fct.normalize_function(input_values)
-
+        #output = input_values
         if not forward_only:
             derivatives = []  # collection of the derivatives of the act functions
             outputs = [output]  # passed through act. func.
@@ -167,6 +187,10 @@ class LinearModel1:
         for i, weight_layer in enumerate(self.weights):
             # Loop over the network layers and calculate the output
             signal = np.dot(output, weight_layer)
+            # if i >0:
+            #     for j in range(signal.shape[1]):
+            #         signal[:,j] = np.sum[signal[:,:(j+1)]]
+
             output = self.layers[i][1](signal)
 
             if not forward_only:
@@ -179,11 +203,51 @@ class LinearModel1:
 
         return output
 
-    def perplexity(self, input_values, forward_only=True):
+    def update(self, input_values, forward_only=True):
+        """
+        Forward pass. If forward_only is false, then return the output at each layer and the derivatives,
+        otherwise returns the final output only.
+        Returns:
 
-        print("Evaluating on test data ")
+        """
+        self.weights[2] = np.multiply(fct.zero_padding(self.weights[2]),self.weights[2])
+        output = fct.normalize_function(input_values)
 
-    def save_model(self, filename="linear1.pickle"):
+        if not forward_only:
+            derivatives = []  # collection of the derivatives of the act functions
+            outputs = [output]  # passed through act. func.
+
+        for i, weight_layer in enumerate(self.weights):
+            # Loop over the network layers and calculate the output
+
+            #if i == 0:
+                #signal = np.dot(output, np.multiply(fct.zero_padding(weight_layer),weight_layer))
+
+            signal = np.dot(output, weight_layer)
+            output = self.layers[i][1](signal)
+
+            if not forward_only:
+                outputs.append(output)
+                derivatives.append(
+                    self.layers[i][1](signal, derivative=True).T)  # the derivative used for weight update
+
+        if not forward_only:
+            return outputs, derivatives
+        return output
+
+    def evaluate(self, data_set, cost_function ):
+        input,target = dp.check_data(self,data_set)
+
+        print("Evaluate model")
+
+        # perform a forward operation to calculate the output signal
+        out = self.update(input)
+        # calculate the mean error on the data classification
+        mean_loss = cost_function( out, target ) #/ float(input.shape[0])
+        return mean_loss
+
+
+    def save_model(self, filename="linear2.pickle"):
         """
         Save the parameters of the model
         """

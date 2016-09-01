@@ -22,24 +22,17 @@ def generate_binary_vectors(data_set):
 
     data_input, data_target = data_set
 
-    num_inputs = len(data_input[0])
-    num_output = len(data_target[0])
-
-    input_vector = list(np.zeros(88))
-    target_vector =list(np.zeros(88))
-
     input_vectors, target_vectors = [],[]
-    for i in xrange(len(data_input)):
-        for ni in data_input[i]:
-            input_vector[ni] = 1
-        for nt in data_target[i]:
-            target_vector[ni] = 1
+    for this_data_input, this_data_target in zip(data_input,data_target):
+        input_vector = (np.zeros(88))
+        target_vector = (np.zeros(88))
+
+        input_vector[this_data_input] = 1.
+        target_vector[this_data_target] = 1.
         input_vectors.append(input_vector)
         target_vectors.append(target_vector)
-        input_vector = list(np.zeros(88))
-        target_vector = list(np.zeros(88))
 
-    return [input_vectors,target_vectors]
+    return list(map(list,input_vectors)),list(map(list,target_vectors))
 
 def read_data(file_name, context_size, full_context=False, training_data=True,
               valid_data=False, test_data=False):
@@ -192,9 +185,8 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
         tr_chords.extend(chords)
         tr_contexts.extend(contexts)
 
-    augmented_data = augment_data(valid_data, theta)
 
-    for seq in augmented_data:
+    for seq in valid_data:
         for i in range(len(seq)):
             seq[i] = list(map(add, seq[i], [-21] * len(seq[i])))
         if full_context:
@@ -205,9 +197,8 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
         val_chords.extend(chords)
         val_contexts.extend(contexts)
 
-    augmented_data = augment_data(test_data, theta)
 
-    for seq in augmented_data:
+    for seq in test_data:
         for i in range(len(seq)):
             seq[i] = list(map(add, seq[i], [-21] * len(seq[i])))
         if full_context:
