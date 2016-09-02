@@ -136,7 +136,8 @@ def cost_function():
 # Construct model
 
 
-def train(checkpoint_path='save_models/nade1/nade_like_D1024_batch128.ckpt',load_model=None):
+
+def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None,print_train=False):
 
     print('Create model ...')
 
@@ -152,12 +153,13 @@ def train(checkpoint_path='save_models/nade1/nade_like_D1024_batch128.ckpt',load
 
     with tf.Session() as sess:
         if load_model:
-            checkpoint = tf.train.get_checkpoint_state(load_model)
-            if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
-                print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
-                saver.restore(sess, checkpoint.model_checkpoint_path)
-            else:
-                print("ooops no saved model found in %s ! " % load_model)
+            # checkpoint = tf.train.get_checkpoint_state(load_model)
+            # if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
+            #     print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
+            #     saver.restore(sess, checkpoint.model_checkpoint_path)
+            # else:
+            #     print("ooops no saved model found in %s ! " % load_model)
+            saver.restore(sess, load_model)
         else:
             print("using fresh parameters...")
             sess.run(init)
@@ -231,8 +233,9 @@ def train(checkpoint_path='save_models/nade1/nade_like_D1024_batch128.ckpt',load
             if strikes > 5:
                 break
         print("Optimization Finished!")
+        print("Best validation at epoch: %d" %best_val_epoch)
 
-        #input_test, target_test = test_set
+        input_test, target_test = test_set
         avg_cost_test = 0.
         for batch_id in range(total_batch_test):
             batch_tex, batch_tey = get_batch(test_set, 0)
@@ -241,73 +244,84 @@ def train(checkpoint_path='save_models/nade1/nade_like_D1024_batch128.ckpt',load
 
         #batch_x, batch_y = get_batch(train_set, 0)
         #c_train = sess.run(cost, feed_dict={input: batch_x, target: batch_y})
+        if print_train:
+            avg_cost = 0.
+            for batch_id in range(total_batch):
+                batch_x, batch_y = get_batch(train_set, batch_id)
+                c = sess.run(cost, feed_dict={input: batch_x, target: batch_y})
+                avg_cost += c / total_batch
+            print("train cost")
+            print(c)
 
         #print("Train error %.9f" % (c_train))
         print("Best validation %.9f" % (best_val_loss))
         print("Test error %.9f" % (avg_cost_test))
 
-def print_error(sess, weights=None, bias=None,checkpoint_path="save_models/new", num_notes=None, d=None):
+def print_error(checkpoint_path="save_models/new", print_train=False):
+    print('Create model ...')
 
-    D = 1024
-    NUM_NOTES = 88
-    if num_notes:
-        NUM_NOTES=num_notes
-    if d:
-        D = d
-    # tf Graph input
-    input = tf.placeholder("float", [None, NUM_NOTES])
-    target = tf.placeholder("float", [None, NUM_NOTES])
-
-    print('Loading data ...')
-    dic = pickle.load(open('JSB_processed.pkl', 'rb'))
-    train_chords = dic['t']
-    test_chords = dic['te']
-    valid_chords = dic['v']
-
-    train_set = dp.generate_binary_vectors(train_chords)
-    input_train, target_train = train_set
-    test_set = dp.generate_binary_vectors(test_chords)
-    input_test, target_test = test_set
-    valid_set = dp.generate_binary_vectors(valid_chords)
-    input_valid, target_valid = valid_set
-
-    # Store layers weight & bias
-    if weights is None:
-        weights = {
-            'M1': tf.Variable(tf.random_normal([NUM_NOTES, D])),
-            'M2': tf.Variable(tf.random_normal([NUM_NOTES, D])),
-            # 'hidden2': tf.Variable(tf.random_normal([D, NUM_NOTES])),
-            # 'pad' : tf.Variable(tf.constant(ones_triangular(NUM_NOTES).tolist()),trainable=False),
-            'W': tf.Variable(tf.random_normal([D, NUM_NOTES]))
-        }
-    if bias is None:
-        bias = {
-            #     'hidden1': tf.Variable(tf.random_normal([D])),
-            'M2': tf.Variable(tf.random_normal([D])),
-            #     'out': tf.Variable(tf.random_normal([NUM_NOTES]))
-        }
     pred = nade_like(input, target, weights, bias)
-    saver = tf.train.Saver(tf.all_variables(), max_to_keep=1)
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(pred, target), 1))
-    optimizer = tf.train.AdamOptimizer(epsilon=1e-03, learning_rate=learning_rate).minimize(cost)
-    #with tf.Session() as sess:
-    checkpoint = tf.train.get_checkpoint_state(checkpoint_path)
-    if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
-        print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
-        saver.restore(sess, checkpoint.model_checkpoint_path)
-    else:
-        print("ooops no saved model found in %s ! " % checkpoint_path)
+    optimizer = tf.train.AdamOptimizer(epsilon=1e-06, learning_rate=learning_rate).minimize(cost)
+    # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
+    # Initializing the variables
+    init = tf.initialize_all_variables()
+    saver = tf.train.Saver(tf.all_variables(), max_to_keep=1)
+    # Launch the graphx
 
-    c = sess.run(cost, feed_dict={input: input_train, target: target_train})
-    print("train cost")
-    print(c)
-    c = sess.run(cost, feed_dict={input: input_valid, target: target_valid})
+    with tf.Session() as sess:
+        if checkpoint_path:
+            saver.restore(sess, checkpoint_path)
+        else:
+            print("using fresh parameters...")
+            sess.run(init)
+
+        print('Loading data ...')
+        dic = pickle.load(open('JSB_processed.pkl', 'rb'))
+        train_chords = dic['t']
+        test_chords = dic['te']
+        valid_chords = dic['v']
+
+        train_set = dp.generate_binary_vectors(train_chords)
+        # input_train, target_train = train_set
+        test_set = dp.generate_binary_vectors(test_chords)
+        valid_set = dp.generate_binary_vectors(valid_chords)
+        # input_valid, target_valid = valid_set
+
+        data_size = len(train_set[0])
+        data_size_valid = len(valid_set[0])
+        data_size_te = len(test_set[0])
+
+        total_batch = int(data_size / batch_size)
+        total_batch_valid = int(data_size_valid / batch_size)
+        total_batch_test = int(data_size_te / batch_size)
+
+    if print_train:
+        avg_cost = 0.
+        for batch_id in range(total_batch):
+            batch_x, batch_y = get_batch(train_set, batch_id)
+            c = sess.run(cost, feed_dict={input: batch_x, target: batch_y})
+            avg_cost += c / total_batch
+        print("train cost")
+        print(c)
+
+    avg_cost_valid = 0.
+    for batch_id in range(total_batch_valid):
+        batch_vx, batch_vy = get_batch(valid_set, batch_id)
+        c_valid = sess.run(cost, feed_dict={input: batch_vx, target: batch_vy})
+        avg_cost_valid += c_valid / total_batch_valid
     print("valid cost")
-    print(c)
-    c = sess.run(cost, feed_dict={input: input_test, target: target_test})
+    print(avg_cost_valid)
+
+    avg_cost_test = 0.
+    for batch_id in range(total_batch_test):
+        batch_tex, batch_tey = get_batch(test_set, 0)
+        c_test = sess.run(cost, feed_dict={input: batch_tex, target: batch_tey})
+        avg_cost_test += c_test / total_batch_test
     print("test cost")
-    print(c)
+    print(avg_cost_test)
+
 
 if __name__ == "__main__":
     train()

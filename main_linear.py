@@ -1,75 +1,90 @@
 import sys
-from chord2vec.linear_models.learning import scipyoptimize
+from chord2vec.linear_models.learning import optimize
 from chord2vec.linear_models.learning import RMSprop
 from chord2vec.linear_models.linear_model import LinearModel1
 from chord2vec.linear_models.functions import *
 import pickle
 from chord2vec.linear_models import data_processing as dp
 
-dic=pickle.load(open('JSP_processed','rb'))
-train_chords = dic['t']
-test_chords = dic['te']
+NUM_NOTES=88
+D=512
+file_name=None
+def load_data(file_name ='JSB_processed.pkl'):
+    print('Loading data ...')
+    dic=pickle.load(open(file_name,'rb'))
+    train_chords = dic['t']
+    test_chords = dic['te']
+    train_set = dp.generate_binary_vectors(train_chords)
+    test_set = dp.generate_binary_vectors(test_chords)
+    return train_set,test_set
 
-train_set = dp.generate_binary_vectors(train_chords)
-test_set = dp.generate_binary_vectors(test_chords)
 
-#for testing prupose
-#train_set = [[[0, 0, 0, 1,1, 0, 1, 0], [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
-#            [[1, 1, 0, 1,0, 1, 1, 0], [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
 
-#test_set = [[[0, 0, 0, 1,1, 0, 1, 0], [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
-#            [[1, 1, 0, 1,0, 1, 1, 0], [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
+def create_model(NUM_NOTES=NUM_NOTES, D=D, load_model=None):
+    if load_model is None:
+        model = LinearModel1({
+            "sigma"          : 0.1,      # weight range around zero
+            "num_inputs": NUM_NOTES,
+            "layers": [(D, linear_function), (NUM_NOTES,sigmoid_function ), (NUM_NOTES, sigmoid_function) ]#,(NUM_NOTES, linear_function)],
+        })
+    else:
+        model = LinearModel1.load_model(load_model)
+    return model
 
-cost_function = sigmoid_cross_entropy_cost
-
-# initialize the neural model
-model = LinearModel1()
-#model.check_gradient(train_set, cost_function)
-
-## load a stored model configuration
-# model           = NeuralNet.load_model_from_file( "model0.pkl" )
-
+def train(model, train_set, test_set,cost_function = binary_cross_entropy_cost,save_file=None):
+    optimize(model, train_set, test_set, cost_function, method="L-BFGS-B", save_file=save_file)
 
 # Train the model using LBFGS
-scipyoptimize(
-        model,
-        train_set,                      # specify the training set
-        test_set,                          # specify the test set
-        cost_function,                      # specify the cost function to calculate error
-        method               = "L-BFGS-B",
-        save_trained_model = False        # Whether to write the trained weights to disk
-    )
+#optimize( model, train_set,  test_set, cost_function, method = "L-BFGS-B", save_trained_model = True)
 
-print(model.update(train_set),True)
+#print(model.update(test_set[0][0]),True)
 
-# Train the model using backpropagation
-# RMSprop(
-#     model,  # the model to train
-#     train_set,  # specify the training set
-#     test_set,  # specify the test set
-#     cost_function,  # specify the cost function to calculate error
-#
-#     ERROR_LIMIT=1e-2,  # define an acceptable error limit
-#     # max_iterations         = 100,      # continues until the error limit is reach if this argument is skipped
-#
-#     batch_size=0,  # 1 := no batch learning, 0 := entire trainingset as a batch, anything else := batch size
-#     print_rate=1000,  # print error status every `print_rate` epoch.
-#     learning_rate=0.3,  # learning rate
-#     momentum_factor=0.9,  # momentum
-#     input_layer_dropout=0.0,  # dropout fraction of the input layer
-#     hidden_layer_dropout=0.0,  # dropout fraction in all hidden layers
-#     save_trained_model=False  # Whether to write the trained weights to disk
-# )
+def check_grad():
+ #for testing prupose
+    train_set = [[[0, 0, 0, 1,1, 0, 1, 0], [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
+            [[1, 1, 0, 1,0, 1, 1, 0], [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
 
+    test_set = [[[0, 0, 0, 1,1, 0, 1, 0], [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
+            [[1, 1, 0, 1,0, 1, 1, 0], [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
 
-def parse_args():
-    if len(sys.argv)>1:
+    #train_set, test_set = load_data()
+    i, o = train_set
+    train_set = [i[:2],o[:2]]
+
+    model = create_model(8,16)
+    model.check_gradient(train_set,binary_cross_entropy_cost)
+
+def main():
+    if len(sys.argv)>2:
         first_arg = sys.argv[1]
         second_arg = sys.argv[2]
-        if first_arg == '-D' and isinstance( int(second_arg), int ):
+        if first_arg == '-D' and isinstance(int(second_arg), int):
             D = int(second_arg)
-            print(D)
+    if len(sys.argv) > 4:
+        third_arg = sys.argv[3]
+        forth_arg = sys.argv[4]
+        if third_arg == '-F':
+            file_name = forth_arg
 
+    if len(sys.argv) > 5:
+        if sys.argv[5] == '-T':
+            train_set = [
+                [[0, 0, 0, 1, 1, 0, 1, 0], [1, 1, 1, 1, 0, 0, 1, 1], [1, 1, 1, 0, 0, 1, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1], [1, 0, 0, 0, 1, 0, 0, 1]], \
+                [[1, 1, 0, 1, 0, 1, 1, 0], [0, 0, 1, 1, 1, 1, 1, 1], [0, 0, 1, 0, 1, 0, 0, 1], [1, 1, 0, 1, 1, 1, 0, 1], [0, 1, 0, 0, 0, 1, 0, 1]]]
+
+            test_set = [
+                [[0, 0, 0, 1, 1, 0, 1, 0], [1, 1, 1, 1, 0, 0, 1, 1], [1, 1, 1, 0, 0, 1, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1],[1, 0, 0, 0, 1, 0, 0, 1]], \
+                [[1, 1, 0, 1, 0, 1, 1, 0], [0, 0, 1, 1, 1, 1, 1, 1], [0, 0, 1, 0, 1, 0, 0, 1], [1, 1, 0, 1, 1, 1, 0, 1], [0, 1, 0, 0, 0, 1, 0, 1]]]
+    else:
+        train_set, test_set = load_data()
+
+    model = create_model(D=D)
+
+    train(model, train_set, test_set, binary_cross_entropy_cost,file_name)
+
+
+    print("Test loss :")
+    print(model.evaluate(train_set, binary_cross_entropy_cost))
 
 if __name__ == "__main__":
-    parse_args()
+    main()

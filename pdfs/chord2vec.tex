@@ -4,7 +4,7 @@
 \author{Sephora Madjiheurem}
 \usepackage[numbers]{natbib}
 \usepackage{amsmath,amssymb,amsthm,amsfonts,graphics,subfigure,graphicx,enumerate,bbm} 
-
+\usepackage[table,xcdraw]{xcolor}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\C}{\mathbb{C}} 
 \newcommand{\T}{\mathcal{T}}
@@ -22,8 +22,7 @@
 \begin{document}
 \maketitle
 
-\section{Linear Model}
-\subsection{Skip-gram Model: Recap}
+\section{Skip gram: recap}
 
 The skip-gram allows to efficiently learn high-quality distributed vector representations that capture precise syntactic and semantic word relationships \citep{mik2013}. We give here a short reminder of how the skip-gram model works.
 
@@ -63,7 +62,7 @@ Similarly to a text, we define a piece of music as a series of chords. A chord i
 \end{enumerate}
  
  
- \subsection{Linear model 1}
+ \subsubsection{Model 1: bilinear}
 
 The first proposed linear model makes a conditional independence assumption between the notes in a context chord $\boldc$ given a chord $\boldd$ , i.e 
 \begin{equation}
@@ -141,6 +140,9 @@ where $v_{dj}$ denotes the $j$'th element of $\boldvd$.
 \frac{\partial E}{\partial \mjk} = \dfrac{\partial E}{\partial v_{dj}} \dfrac{\partial v_{dj}}{\partial \mjk} = \big(\sum_{i=1}^N \dfrac{\partial E_i}{\partial u_i} \dfrac{\partial u_i}{\partial v_{dj}}\big) \dfrac{\partial v_{dj}}{\partial \mjk} = \sum_{i=1}^N \big( c_j' - \frac{\exp(u_i)}{1 + \exp(u_i)} \tmij \big) d_k
 \]
 
+\section{Model 2}
+
+
 
 %The second point, together with the fact that the computation of the objective is no longer dependent of number of possible context chords (since we are not using softmax, the sum over all possible context chords disappears) suggest that there might not be the need to use efficiency optimizations tricks as negative sampling. 
  
@@ -208,6 +210,181 @@ The corresponding objective is then given by:
 \max_{\theta}  \frac{1}{W} \sum_{t=1}^{W} \log p(C(c_t)|c_t,\theta)\,,
 \label{eq:c2cs_obj}
 \end{equation}
+
+\section{Results}
+
+% Please add the following required packages to your document preamble:
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+%\begin{table}[]
+%\centering
+%\caption{Experiment 1}
+%\label{my-label}
+%\begin{tabular}{|l|l|l|l|l|l|}
+%\hline
+%  &      & train & validation & test & epochs \\ \hline
+%1 & 512  &   2.9068    &    3.0632        &    3.0550  &   11     \\ \hline
+%\rowcolor[HTML]{EFEFEF}
+%1 & 512  &   2.9690    &    3.0794        &    3.0776  &   20     \\ \hline
+%
+%1 & 1024  &   2.9289    &    3.0786        &    3.0578  &   7     \\ \hline
+%\rowcolor[HTML]{EFEFEF}
+%1 & 1024  &   3.1343    &    3.1731        &    3.3384  &   15     \\ \hline
+%
+%2 & 512  &   2.9245    &    3.0661        &    \textbf{3.0480}  &   7     \\ \hline
+%\rowcolor[HTML]{EFEFEF}
+%2 & 512  &   2.9885    &    3.0841        &    3.0766  &   9     \\ \hline
+%
+%2 & 1024  &   2.9392    &    3.0741        &    3.0668  &   10     \\ \hline
+%\rowcolor[HTML]{EFEFEF}
+%2 & 1024  &   3.0733    &    3.1329        &    3.2549  &   20     \\ \hline
+%
+%3 & 512  &   2.9377    &    3.0743        &    3.0584  &   9     \\ \hline
+%\rowcolor[HTML]{EFEFEF}
+%3 & 512  &   2.9326    &    3.0760        &    3.0668  &   20     \\ \hline
+%
+%3 & 1024  &   2.9502    &    3.0765        &    3.0748  &   20     \\ \hline
+%\rowcolor[HTML]{EFEFEF}
+%3 & 1024  &   2.9830    &    3.0851        &    3.0885  &   20     \\ 
+%\hline
+%2 & 1024  &   2.9272    &    3.0832        &    3.0609  &   4     \\ \hline
+%\rowcolor[HTML]{EFEFEF}
+%2 & 1024  &   3.0145    &    3.1027        &    3.0889  &   5     \\ \hline
+%
+%\hline
+%\end{tabular}
+%\end{table}
+
+\begin{table}[]
+\centering
+\caption{Addam, no regul, no attention}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+layers  & units & batch size   & train & validation & test & epochs \\ \hline
+3 & 512  & 128 &   2.3684    &    3.0333        &    3.0416  &   1     \\ \hline
+3 & 512  & 128 &   2.3684    &    3.0333        &    3.0416  &   1     \\ \hline
+3 & 512  & 256 &   2.2201    &    3.0178        &    3.0035  &   3     \\ \hline
+3 & 1024  & 128 &   2.4899    &    3.0629        &    3.0821  &   6     \\ \hline
+3 & 1024  & 256 &   2.3052    &    3.0323        &    3.0383  &   1     \\ \hline
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{GD, no regul, no attention}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+layers  & units & batch size   & train & validation & test & epochs \\ \hline
+3 & 512  & 128 &   2.2873    &    2.9922        &    2.9900  &   7     \\ \hline
+3 & 512  & 256 &   2.4412    &    2.9697        &    2.9716  &   9     \\ \hline
+3 & 1024  & 128 &   2.2295    &    3.0082        &    2.9739  &   5     \\ \hline
+3 & 1024  & 256 &   2.3736    &    2.9807        &    2.9636  &   8     \\ \hline
+3 & 512  & 128 &   2.2873    &    2.9922        &    2.9900  &   7     \\ \hline
+3 & 512  & 256 &   2.4412    &    2.9697        &    2.9716  &   9     \\ \hline
+3 & 1024  & 128 &   2.2295    &    3.0082        &    2.9739  &   5     \\ \hline
+3 & 1024  & 256 &   2.3736    &    2.9807        &    2.9636  &   8     \\ \hline
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Seq2seq trained with gradient descent, perplexities}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+layers  & units & batch size   & train & validation & test & epochs \\ \hline
+1 & 512  & 64 &   2.3081    &    2.9367        &    2.9488  &   5     \\ \hline
+1 & 512  & 128 &   2.3988    &    2.9258        &    2.9380  &   7     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+1 & 512  & 64 &   2.3770    &    2.9876        &    3.0109  &   8     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+1 & 512  & 128 &   2.4345    &    2.9802        &    2.9919  &   8     \\ \hline
+1 & 1024  & 64 &   2.2457    &    2.9483        &    2.9632  &   7     \\ \hline
+1 & 1024  & 128 &   2.3319    &    2.9297        &    2.9423  &   8     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+1 & 1024  & 64 &   2.3335    &    2.9873        &    3.0027  &   9     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+1 & 1024  & 128 &   2.3794    &    2.9867        &    3.0107  &   5     \\ \hline
+2 & 512  & 64 &   2.1998    &    2.9065        &    2.9234  &   6     \\ \hline
+2 & 512  & 128 &   2.3058    &    2.8968        &    \textbf{2.9043}  &   9     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+2 & 512  & 64 &   2.2248    &    2.9282        &    2.9479  &   5     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+2 & 512  & 128 &   2.3130    &    2.9241        &    2.9415  &   6     \\ \hline
+2 & 1024  & 64 &   2.1488    &    2.9222        &    2.9344  &   5     \\ \hline
+2 & 1024  & 128 &   2.2539    &    2.9090        &    2.9297  &   7     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+2 & 1024  & 64 &   2.1638    &    2.9274        &    2.9443  &   6     \\ \hline
+\rowcolor[HTML]{EFEFEF}
+2 & 1024  & 128 &   2.2548    &    2.9302        &    2.9544  &   8     \\ \hline
+\end{tabular}
+\end{table}
+
+%\begin{table}[]
+%\centering
+%\caption{Best seq 2 seq model, log likelihood}
+%\label{my-label}
+%\begin{tabular}{|l|l|l|l|l|}
+%\hline
+%num layers & units   & train & validation & test \\ \hline
+%2 & 512 & -0.98 & -1.105289 & -1.1090  \\ \hline
+%\end{tabular}
+%\end{table}
+
+\begin{table}[]
+\centering
+\caption{Best seq 2 seq model, log likelihood}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+data set    & train & validation & test & epochs\\ \hline
+JSB Chorales &   -0.8424    &    -1.1053        &    -1.1090  &   3     \\ \hline
+Piano-midi.de &   -1.0026    &    -1.8653        &    -1.7795  &   1     \\ \hline
+MuseData &   -1.3788    &    -1.4773        &    -1.5243  &   7     \\ \hline
+Nottingham &   -0.4874    &    -0.5117        &    -0.4974  &   10     \\ \hline
+all data sets &   -1.0739    &    -1.2012        &    -1.2207  &   7     \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Linear models, log likelihood}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|}
+\hline
+D   & train & validation & test \\ \hline
+512 & -9.6941 & -9.5372 & -9.7731  \\ \hline
+1024 & -9.6934 & -9.5364 & -9.773  \\ \hline
+\end{tabular}
+\end{table}
+
+%\begin{table}[]
+%\centering
+%\caption{NADE-like model, log likelihood}
+%\label{my-label}
+%\begin{tabular}{|l|l|l|l|}
+%\hline
+%D   & train & validation & test \\ \hline
+%512 & -0.01265 & -0.028501 & -0.01756 \\ \hline
+%\end{tabular}
+%\end{table}
+
+
+\begin{table}[]
+\centering
+\caption{Baseline models, log likelihood }
+\label{my-label}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+        &  test set \\ \hline
+marginal probability &-12.2349 \\ \hline
+random & -60.9969 \\ \hline
+\end{tabular}
+\end{table}  
 
 
 \newpage

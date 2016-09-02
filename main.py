@@ -36,13 +36,13 @@ tf.app.flags.DEFINE_float("reg_factor", 1.0,
                           "Lambda for l2 regulariation.")
 tf.app.flags.DEFINE_float("max_gradient_norm", 5.0,
                           "Clip gradients to this norm.")
-tf.app.flags.DEFINE_integer("batch_size", 64,
+tf.app.flags.DEFINE_integer("batch_size", 128,
                             "Batch size to use during training.")
-tf.app.flags.DEFINE_integer("num_units", 8, "Size of each model layer.")
-tf.app.flags.DEFINE_integer("num_layers", 1, "Number of layers in the model.")
+tf.app.flags.DEFINE_integer("num_units", 512, "Size of each model layer.")
+tf.app.flags.DEFINE_integer("num_layers", 2, "Number of layers in the model.")
 tf.app.flags.DEFINE_integer("notes_range", 92, "Number of notes in the vocabulary.")
 
-tf.app.flags.DEFINE_boolean("attention", True, "Build sequence-to-sequence model with attention mechanism")
+tf.app.flags.DEFINE_boolean("attention", False, "Build sequence-to-sequence model with attention mechanism")
 tf.app.flags.DEFINE_boolean("multiple_decoders", False, "Build sequence-to-sequences model")
 tf.app.flags.DEFINE_integer("num_decoders", 2, "Number of decoders, i.e. number of context chords")
 
@@ -50,7 +50,7 @@ tf.app.flags.DEFINE_string("data_file", "JSB_Chorales.pickle", "Data file name")
 tf.app.flags.DEFINE_boolean("all_data_sets", False, "Uses all 4 data sets for training")
 
 tf.app.flags.DEFINE_boolean("GD", False, "Uses Gradient Descent with adaptive learning rate")
-tf.app.flags.DEFINE_string("train_dir", "unit1024layer2", "Training directory.")
+tf.app.flags.DEFINE_string("train_dir", "bach/JSB_Chorales_128batch_2layers_512units", "Training directory.")
 
 tf.app.flags.DEFINE_integer("max_train_data_size", 0,
                             "Limit on the size of training data (0: no limit).")
@@ -58,9 +58,9 @@ tf.app.flags.DEFINE_integer("max_valid_data_size", 0,
                             "Limit on the size of validation data (0: no limit).")
 tf.app.flags.DEFINE_integer("max_test_data_size", 0,
                             "Limit on the size of validation data (0: no limit).")
-tf.app.flags.DEFINE_integer("max_epochs", 3,
+tf.app.flags.DEFINE_integer("max_epochs", 20,
                             "Maximium number of epochs for trainig.")
-tf.app.flags.DEFINE_integer("steps_per_checkpoint", 100,
+tf.app.flags.DEFINE_integer("steps_per_checkpoint",100,
                             "How many training steps to do per checkpoint.")
 tf.app.flags.DEFINE_boolean("decode", False,
                             "Set to True for interactive decoding.")
@@ -74,10 +74,13 @@ FLAGS = tf.app.flags.FLAGS
 _buckets = [(4, 6)]
 
 if FLAGS.data_file == "Nottingham.pickle":
+    print("Nottingham data set")
     _buckets = [(9,11)]
 if FLAGS.data_file == "Piano-midi.de.pickle":
+    print("Piano-midi de data set")
     _buckets = [(12,14)]
 if FLAGS.data_file == "MuseData.pickle" or FLAGS.all_data_sets:
+    print("Muse data set")
     _buckets = [(14,16)]
 
 def read_data(file_name, context_size, full_context=False, training_data=True,
@@ -603,7 +606,19 @@ def get_vector_representation(data_point):
     print(encoder_final_state)
     return encoder_final_state
 
+def get_vector_representation_inSess(sess,data_point):
+    with tf.variable_scope("model") as scope:
+        batch_size=1
+        bucket_id =0
+        model = create_seq2seq_model(sess, True, attention=FLAGS.attention, result_file=None, batch_size=batch_size)
 
+        if len(data_point[bucket_id]) == 0:
+            print("  eval: empty bucket %d" % (bucket_id))
+        encoder_final_state, loss, ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
+                                                                   data_point, FLAGS.num_decoders, bucket_id, True,
+                                                                   batch_id=1)
+    print(encoder_final_state)
+    return encoder_final_state
 
 def _get_batch_make_step(sess, model, multiple_decoders, data_set, num_decoders, bucket_id, forward_only,
                          ):
