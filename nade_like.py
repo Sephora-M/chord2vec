@@ -90,7 +90,7 @@ def nade_like(input, target, weights, bias):
 
     hidden01 = tf.batch_matmul(tf.expand_dims(hidden01,2),tf.ones([batch_size,1,NUM_NOTES])) # Vd augmented to D across 2 dimension
 
-    hidden02 = cumsum_weights(target, weights['M2'],D)
+    hidden02 = cumsum_weights(normalize(target), weights['M2'],D)
 
     hidden = hidden01 + hidden02
 
@@ -136,14 +136,14 @@ def cost_function():
 # Construct model
 
 
-def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None):
+def train(checkpoint_path='save_models/nade1/nade_like_D1024_batch128.ckpt',load_model=None):
 
     print('Create model ...')
 
     pred = nade_like(input, target, weights,bias)
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(pred, target), 1))
-    optimizer = tf.train.AdamOptimizer(epsilon=1e-06, learning_rate=learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(epsilon=1e-03, learning_rate=learning_rate).minimize(cost)
     # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
     # Initializing the variables
     init = tf.initialize_all_variables()
