@@ -11,6 +11,7 @@ from chord2vec.linear_models import data_processing as dp
 import pickle
 import numpy as np
 import random
+import sys
 
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import gen_math_ops
@@ -24,7 +25,7 @@ from tensorflow.python.ops import gen_math_ops
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 500
+training_epochs = 200
 batch_size = 128
 display_step = 1
 
@@ -129,15 +130,29 @@ def get_batch(data_set,id, stoch=False):
     input, target = data_set
     return input[(batch_id * batch_size - batch_size):(batch_id * batch_size)], target[(batch_id * batch_size - batch_size):(batch_id * batch_size)]
 
-def cost_function():
-
-    return tf.reduce_mean(tf.reduce_sum( tf.add(tf.log(pred)*target,
-                             tf.log(tf.add(1.0,tf.neg(pred))) * tf.add(1.0, tf.neg(target))),1 ))
 # Construct model
 
+def load_data(file_name = "JSB_Chorales.pickle"):
+    print('Loading data ...')
+    train_chords, test_chords , valid_chords = dp.read_data(file_name,1)
 
+    train_set = dp.generate_binary_vectors(train_chords)
+    # input_train, target_train = train_set
+    test_set = dp.generate_binary_vectors(test_chords)
+    valid_set = dp.generate_binary_vectors(valid_chords)
+    # input_valid, target_valid = valid_set
 
-def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None,print_train=False):
+    data_size = len(train_set[0])
+    data_size_valid = len(valid_set[0])
+    data_size_te = len(test_set[0])
+
+    total_batch = int(data_size / batch_size)
+    total_batch_valid = int(data_size_valid / batch_size)
+    total_batch_test = int(data_size_te / batch_size)
+
+    return train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid
+
+def train(file_name,checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None,print_train=False):
 
     print('Create model ...')
 
@@ -164,32 +179,17 @@ def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None
             print("using fresh parameters...")
             sess.run(init)
 
-        print('Loading data ...')
-        dic = pickle.load(open('JSB_processed.pkl', 'rb'))
-        train_chords = dic['t']
-        test_chords = dic['te']
-        valid_chords = dic['v']
 
-        train_set = dp.generate_binary_vectors(train_chords)
-        #input_train, target_train = train_set
-        test_set = dp.generate_binary_vectors(test_chords)
-        valid_set = dp.generate_binary_vectors(valid_chords)
-        #input_valid, target_valid = valid_set
-
-        data_size = len(train_set[0])
-        data_size_valid = len(valid_set[0])
-        data_size_te = len(test_set[0])
-
-        total_batch = int(data_size / batch_size)
-        total_batch_valid = int(data_size_valid / batch_size)
-        total_batch_test = int(data_size_te / batch_size)
         # valid_set=test_set
         # input_valid, target_valid = valid_set
         # input_train, target_train = train_set
+        train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid = load_data(file_name)
 
         batch_vx, batch_vy = get_batch(valid_set, 0)
         best_val_loss = sess.run(cost, feed_dict={input: batch_vx, target: batch_vy})
         print('Start training ...')
+
+
         # Training cycle
         previous_eval_loss = []
 
@@ -257,13 +257,13 @@ def train(checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None
         print("Best validation %.9f" % (best_val_loss))
         print("Test error %.9f" % (avg_cost_test))
 
-def print_error(checkpoint_path="save_models/new", print_train=False):
+def print_error(file_name,checkpoint_path="save_models/new", print_train=False, print_valid=False):
     print('Create model ...')
 
     pred = nade_like(input, target, weights, bias)
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(pred, target), 1))
-    optimizer = tf.train.AdamOptimizer(epsilon=1e-06, learning_rate=learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(epsilon=1e-03, learning_rate=learning_rate).minimize(cost)
     # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
     # Initializing the variables
     init = tf.initialize_all_variables()
@@ -277,51 +277,54 @@ def print_error(checkpoint_path="save_models/new", print_train=False):
             print("using fresh parameters...")
             sess.run(init)
 
-        print('Loading data ...')
-        dic = pickle.load(open('JSB_processed.pkl', 'rb'))
-        train_chords = dic['t']
-        test_chords = dic['te']
-        valid_chords = dic['v']
+        # print('Loading data ...')
+        # dic = pickle.load(open('JSB_processed.pkl', 'rb'))
+        # train_chords = dic['t']
+        # test_chords = dic['te']
+        # valid_chords = dic['v']
+        #
+        # train_set = dp.generate_binary_vectors(train_chords)
+        # # input_train, target_train = train_set
+        # test_set = dp.generate_binary_vectors(test_chords)
+        # valid_set = dp.generate_binary_vectors(valid_chords)
+        # # input_valid, target_valid = valid_set
+        #
+        # data_size = len(train_set[0])
+        # data_size_valid = len(valid_set[0])
+        # data_size_te = len(test_set[0])
+        #
+        # total_batch = int(data_size / batch_size)
+        # total_batch_valid = int(data_size_valid / batch_size)
+        # total_batch_test = int(data_size_te / batch_size)
 
-        train_set = dp.generate_binary_vectors(train_chords)
-        # input_train, target_train = train_set
-        test_set = dp.generate_binary_vectors(test_chords)
-        valid_set = dp.generate_binary_vectors(valid_chords)
-        # input_valid, target_valid = valid_set
+        train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid = load_data(file_name)
 
-        data_size = len(train_set[0])
-        data_size_valid = len(valid_set[0])
-        data_size_te = len(test_set[0])
+        if print_train:
+            avg_cost = 0.
+            for batch_id in range(total_batch):
+                batch_x, batch_y = get_batch(train_set, batch_id)
+                c = sess.run(cost, feed_dict={input: batch_x, target: batch_y})
+                avg_cost += c / total_batch
+            print("train cost")
+            print(c)
 
-        total_batch = int(data_size / batch_size)
-        total_batch_valid = int(data_size_valid / batch_size)
-        total_batch_test = int(data_size_te / batch_size)
+        if print_valid:
+            avg_cost_valid = 0.
+            for batch_id in range(total_batch_valid):
+                batch_vx, batch_vy = get_batch(valid_set, batch_id)
+                c_valid = sess.run(cost, feed_dict={input: batch_vx, target: batch_vy})
+                avg_cost_valid += c_valid / total_batch_valid
+            print("valid cost")
+            print(avg_cost_valid)
 
-    if print_train:
-        avg_cost = 0.
-        for batch_id in range(total_batch):
-            batch_x, batch_y = get_batch(train_set, batch_id)
-            c = sess.run(cost, feed_dict={input: batch_x, target: batch_y})
-            avg_cost += c / total_batch
-        print("train cost")
-        print(c)
-
-    avg_cost_valid = 0.
-    for batch_id in range(total_batch_valid):
-        batch_vx, batch_vy = get_batch(valid_set, batch_id)
-        c_valid = sess.run(cost, feed_dict={input: batch_vx, target: batch_vy})
-        avg_cost_valid += c_valid / total_batch_valid
-    print("valid cost")
-    print(avg_cost_valid)
-
-    avg_cost_test = 0.
-    for batch_id in range(total_batch_test):
-        batch_tex, batch_tey = get_batch(test_set, 0)
-        c_test = sess.run(cost, feed_dict={input: batch_tex, target: batch_tey})
-        avg_cost_test += c_test / total_batch_test
-    print("test cost")
-    print(avg_cost_test)
+        avg_cost_test = 0.
+        for batch_id in range(total_batch_test):
+            batch_tex, batch_tey = get_batch(test_set, batch_id)
+            c_test = sess.run(cost, feed_dict={input: batch_tex, target: batch_tey})
+            avg_cost_test += c_test / total_batch_test
+        print("test cost")
+        print(avg_cost_test)
 
 
 if __name__ == "__main__":
-    train()
+    train(sys.argv[1], sys.argv[2])
