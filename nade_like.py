@@ -24,7 +24,7 @@ from tensorflow.python.ops import gen_math_ops
 #data_size = len(train_set[0])
 
 # Parameters
-learning_rate = 0.001
+learning_rate = 0.002
 training_epochs = 200
 batch_size = 128
 display_step = 1
@@ -152,14 +152,14 @@ def load_data(file_name = "JSB_Chorales.pickle"):
 
     return train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid
 
-def train(file_name,checkpoint_path='save_models/test/nade_like_test.ckpt',load_model=None,print_train=False):
+def train(file_name,checkpoint_path='save_models/nade3/nade_like_D1024_batch128.ckpt',load_model='save_models/nade2',print_train=False):
 
     print('Create model ...')
 
     pred = nade_like(input, target, weights,bias)
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(pred, target), 1))
-    optimizer = tf.train.AdamOptimizer(epsilon=1e-03, learning_rate=learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(epsilon=1e-00, learning_rate=learning_rate).minimize(cost)
     # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
     # Initializing the variables
     init = tf.initialize_all_variables()
@@ -168,13 +168,13 @@ def train(file_name,checkpoint_path='save_models/test/nade_like_test.ckpt',load_
 
     with tf.Session() as sess:
         if load_model:
-            # checkpoint = tf.train.get_checkpoint_state(load_model)
-            # if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
-            #     print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
-            #     saver.restore(sess, checkpoint.model_checkpoint_path)
-            # else:
-            #     print("ooops no saved model found in %s ! " % load_model)
-            saver.restore(sess, load_model)
+             checkpoint = tf.train.get_checkpoint_state(load_model)
+             if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
+                 print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
+                 saver.restore(sess, checkpoint.model_checkpoint_path)
+             else:
+                 print("ooops no saved model found in %s ! " % load_model)
+            #saver.restore(sess, load_model)
         else:
             print("using fresh parameters...")
             sess.run(init)

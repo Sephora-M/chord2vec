@@ -34,7 +34,7 @@ input_valid, target_valid = valid_set
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 500
+training_epochs = 1500
 batch_size = 128
 display_step = 1
 
