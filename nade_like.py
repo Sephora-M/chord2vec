@@ -152,7 +152,7 @@ def load_data(file_name = "JSB_Chorales.pickle"):
 
     return train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid
 
-def train(file_name,checkpoint_path='save_models/nade3/nade_like_D1024_batch128.ckpt',load_model='save_models/nade2',print_train=False):
+def train(file_name,checkpoint_path='save_models/nade3/nade_like_D1024_batch128.ckpt',load_model=None,print_train=False):
 
     print('Create model ...')
 

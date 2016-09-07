@@ -55,7 +55,7 @@ def load_data(file_name = "JSB_Chorales.pickle"):
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 1500
+training_epochs = 100
 batch_size = 128
 display_step = 1
 
@@ -123,7 +123,7 @@ def train(file_name,checkpoint_path='save_models/linear/linear_D1024.ckpt',load_
     # Launch the graph
     print('Start training ...')
     with tf.Session() as sess:
-        checkpoint = tf.train.get_checkpoint_state('save_models/linear')
+        checkpoint = False #tf.train.get_checkpoint_state('save_models/linear')
         if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
             print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
             saver.restore(sess, checkpoint.model_checkpoint_path)
