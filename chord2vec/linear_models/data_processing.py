@@ -34,8 +34,25 @@ def generate_binary_vectors(data_set):
 
     return list(map(list,input_vectors)),list(map(list,target_vectors))
 
-def read_data(file_name, context_size, full_context=False, training_data=True,
-              valid_data=False, test_data=False):
+
+def read_all_data(context_size,full_context=False):
+    files_dict = {}
+    files_dict['jsb'] = 'JSB_Chorales.pickle'
+    files_dict['piano'] = 'Piano-midi.de.pickle'
+    files_dict['nottigham'] = 'Nottingham.pickle'
+    files_dict['muse'] = 'MuseData.pickle'
+
+    all_train, all_valid, all_test =  [],[],[]
+
+    for d in files_dict:
+        train, valid, test = read_data(files_dict[d], context_size,full_context=full_context)
+        all_train.extend(train[0])
+        all_valid.extend(valid[0])
+        all_test.extend(test[0])
+
+    return [all_train],[all_valid], [all_test]
+
+def read_data(file_name, context_size, full_context=False):
     """"Load file_name and build (inputs, targets) pairs
 
 		Args:
@@ -52,8 +69,9 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
 			data_set: a list of pairs (input, output) = (chord, context chord(s))
 
 	"""
-    if not training_data ^ valid_data ^ test_data or training_data & valid_data & test_data:
-        raise ValueError("Only one of training_data, valid_data and test_data can be True")
+
+    if file_name == "all.pickle":
+        return read_all_data(context_size, full_context)
 
     dataset = pickle.load(open(file_name,'rb'))
     train_data = dataset['train']
@@ -173,7 +191,6 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
     theta.extend(range(1, 6))
     augmented_data = augment_data(train_data, theta)
 
-
     for seq in augmented_data:
         for i in range(len(seq)):
             seq[i] = list(map(add, seq[i], [-21] * len(seq[i])))
@@ -185,7 +202,6 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
         tr_chords.extend(chords)
         tr_contexts.extend(contexts)
 
-
     for seq in valid_data:
         for i in range(len(seq)):
             seq[i] = list(map(add, seq[i], [-21] * len(seq[i])))
@@ -196,7 +212,6 @@ def read_data(file_name, context_size, full_context=False, training_data=True,
             chords, contexts = get_contexts(seq)
         val_chords.extend(chords)
         val_contexts.extend(contexts)
-
 
     for seq in test_data:
         for i in range(len(seq)):
