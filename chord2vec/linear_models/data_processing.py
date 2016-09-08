@@ -43,14 +43,18 @@ def read_all_data(context_size,full_context=False):
     files_dict['muse'] = 'MuseData.pickle'
 
     all_train, all_valid, all_test =  [],[],[]
+    all_context_train, all_context_valid, all_context_test = [], [], []
 
     for d in files_dict:
         train, valid, test = read_data(files_dict[d], context_size,full_context=full_context)
         all_train.extend(train[0])
         all_valid.extend(valid[0])
         all_test.extend(test[0])
+        all_context_train.extend(train[1])
+        all_context_valid.extend(valid[1])
+        all_context_test.extend(test[1])
 
-    return [all_train],[all_valid], [all_test]
+    return [all_train,all_context_train],[all_valid,all_context_valid], [all_test,all_context_test]
 
 def read_data(file_name, context_size, full_context=False):
     """"Load file_name and build (inputs, targets) pairs
