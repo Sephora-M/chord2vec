@@ -34,7 +34,13 @@ def get_data(dic=None):
 
     return  training_data, train_data, test_data, valid_data
 
-def eval(prob_distr, test_data,epsilon = 1e-8):
+def eval(data_file, epsilon = 1e-8):
+    training_data, valid_data, test_data = dp.read_data(data_file,1)
+    test_data = dp.generate_binary_vectors(test_data)[0]
+    train_data = dp.generate_binary_vectors(training_data)[0]
+
+    prob_distr = normalized_density([train_data])
+
     losses = 0.0
     num_notes = len(test_data[0])
     for data_point in test_data:
@@ -48,7 +54,9 @@ def eval(prob_distr, test_data,epsilon = 1e-8):
         losses += loss
     losses /= len(test_data)
 
-    return math.exp(-losses), -losses
+    print('Test loss : %.4f'  %losses)
+
+
 
 def sigmoid_cross_entropy_cost(outputs, targets, derivative=False, epsilon=1e-8):
     """
