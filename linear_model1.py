@@ -98,7 +98,7 @@ def get_batch(data_set,id, stoch=False):
     return input[(batch_id * batch_size - batch_size):(batch_id * batch_size)], target[(batch_id * batch_size - batch_size):(batch_id * batch_size)]
 
 
-def train(file_name,checkpoint_path='save_models/linear/linear_D1024.ckpt',load_model=None,print_train=False):
+def train(file_name,checkpoint_path='save_models/linear/linear_D1024.ckpt',load_model=None,print_train=False, print_test=False):
     train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid = load_data(file_name)
     data_size = len(train_set[0])
 
@@ -123,50 +123,53 @@ def train(file_name,checkpoint_path='save_models/linear/linear_D1024.ckpt',load_
     # Launch the graph
     print('Start training ...')
     with tf.Session() as sess:
-        checkpoint = False #tf.train.get_checkpoint_state('save_models/linear')
-        if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
-            print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
-            saver.restore(sess, checkpoint.model_checkpoint_path)
-            best_val_loss = sess.run(cost, feed_dict={input: input_valid, target: target_valid})
+        if checkpoint_path:
+            saver.restore(sess, checkpoint_path)
+        # checkpoint = False #tf.train.get_checkpoint_state('save_models/linear')
+        # if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
+        #     print("Reading model parameters from %s" % checkpoint.model_checkpoint_path)
+        #     saver.restore(sess, checkpoint.model_checkpoint_path)
+        #     best_val_loss = sess.run(cost, feed_dict={input: input_valid, target: target_valid})
         else:
             sess.run(init)
             best_val_loss = np.inf
 
-        # Training cycle
-        previous_eval_loss = []
-        best_val_epoch = -1
-        strikes = 0
-        for epoch in range(training_epochs):
-            avg_cost = 0.
-            total_batch = int(data_size/batch_size)
-            # Loop over all batches
-            for i in range(total_batch):
-                batch_x, batch_y = get_batch(train_set,i)
-                # Run optimization op (backprop) and cost op (to get loss value)
-                _, c, out = sess.run([optimizer, cost, pred], feed_dict={input: batch_x,
-                                                             target: batch_y})
+        if not print_test:
+            # Training cycle
+            previous_eval_loss = []
+            best_val_epoch = -1
+            strikes = 0
+            for epoch in range(training_epochs):
+                avg_cost = 0.
+                total_batch = int(data_size/batch_size)
+                # Loop over all batches
+                for i in range(total_batch):
+                    batch_x, batch_y = get_batch(train_set,i)
+                    # Run optimization op (backprop) and cost op (to get loss value)
+                    _, c, out = sess.run([optimizer, cost, pred], feed_dict={input: batch_x,
+                                                                 target: batch_y})
 
-                # Compute average loss
-                avg_cost += c / total_batch
-            # Display logs per epoch step
-            if epoch % display_step == 0:
-                print("Epoch:", '%d' % (epoch+1), "cost=", \
-                    "{:.9f}".format(avg_cost))
-            c_valid = sess.run(cost, feed_dict={input: input_valid, target: target_valid})
-            print("Valid error %4f" % (c_valid))
-            previous_eval_loss.append(c_valid)
-            improve_valid = previous_eval_loss[-1] < best_val_loss
+                    # Compute average loss
+                    avg_cost += c / total_batch
+                # Display logs per epoch step
+                if epoch % display_step == 0:
+                    print("Epoch:", '%d' % (epoch+1), "cost=", \
+                        "{:.9f}".format(avg_cost))
+                c_valid = sess.run(cost, feed_dict={input: input_valid, target: target_valid})
+                print("Valid error %4f" % (c_valid))
+                previous_eval_loss.append(c_valid)
+                improve_valid = previous_eval_loss[-1] < best_val_loss
 
-            if improve_valid:
-                best_val_loss = previous_eval_loss[-1]
-                best_val_epoch = epoch
-                # Save checkpoint.
-                saver.save(sess, checkpoint_path,global_step=epoch)
-            else:
-                strikes += 1
-            if strikes > 3:
-                break
-        print("Optimization Finished!")
+                if improve_valid:
+                    best_val_loss = previous_eval_loss[-1]
+                    best_val_epoch = epoch
+                    # Save checkpoint.
+                    saver.save(sess, checkpoint_path,global_step=epoch)
+                else:
+                    strikes += 1
+                if strikes > 3:
+                    break
+            print("Optimization Finished!")
 
         input_test, target_test = test_set
         c_test = sess.run(cost, feed_dict={input: input_test, target: target_test})
