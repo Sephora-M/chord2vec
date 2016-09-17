@@ -285,7 +285,7 @@ Seq2Seq c2v & 1.1090 &  0.4974 & 1.5243 & 1.7795 & 1.2207
 \end{table}
 
 \section*{Future work}
-Our study has revealed that the Sequence-to-Sequence model leads to the highest log likelihood on all five datasets. Because it is the model with the most complex architecture, these results are not very surprising. However, in the case of text classification problems, it has been shown that a simpler architecture can lead to results that are comparable to deep learning models in terms of accuracy and are much faster for training and evaluation \citep{JoulinGBM16}.
+Our study has revealed that the Sequence-to-Sequence model, which is the model with the most complex architecture, leads to the highest log likelihood on all five datasets. However, in the case of text classification problems, it has been shown that a simpler architecture can lead to results that are comparable to deep learning models in terms of accuracy and are much faster for training and evaluation \citep{JoulinGBM16}.
 With this in mind, we introduce in this section as potential future work yet another model based on the Skip-gram model \citep{mik2013}.
 
 We also suggest some directions for measuring the quality of the learned embedding vectors.
@@ -299,7 +299,7 @@ p(\boldc = \boldc'| \boldd) = \frac{\exp(\tilde{\boldvc} \cdot \boldvd)}{\sum_{\
 where $\boldvd = M\frac{ \boldd}{\| \boldd \|_1}$ and $ \tilde{\boldvc} = \M \frac{ \boldc'}{\| \boldc' \|_1}$.
 
 
-With this model, learning the vectors $\tilde{\boldsymbol v}_c$ is very expensive since we need to iterate through every possible chord. One solution to this scalability problem is to use noise-contrastive estimation \citep{NIPS2013_5165}.  
+\noindent With this model, learning the vectors $\tilde{\boldsymbol v}_c$ is very expensive since we need to iterate through every possible chord. One solution to this scalability problem is to use \textit{noise-contrastive estimation} \citep{NIPS2013_5165}.  
 
 Because this model does not make an assumption of independence between the notes occurring in a chord and given the success of the Skip-gram model for learning words embeddings \citep{mik2013}, one can expect such a model to perform well.
 
