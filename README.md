@@ -6,7 +6,7 @@ Please refer to the written report for information on notations, etc.
 
 ## Linear model  
 This model assumes conditional independence between the notes in a the context chord c given a chord d:
-<img src="http://www.sciweavers.org/tex2img.php?eq=p%28%5Cmathbf%7Bc%7D%20%3D%5Cmathbf%7Bc%7D%27%20%7C%20%5Cmathbf%7Bd%7D%29%20%3D%20%5Cprod_%7Bi%3D1%7D%5EN%20p%28c_i%20%3Dc_i%27%7C%20%5Cmathbf%7Bd%7D%29&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0" align="center" border="0" alt="p(\mathbf{c} =\mathbf{c}' | \mathbf{d}) = \prod_{i=1}^N p(c_i =c_i'| \mathbf{d})" width="235" height="53" />
+<img src="http://bit.ly/2d5wS6x" align="center" border="0" alt="p(\mathbf{c} =\mathbf{c}' | \mathbf{d}) = \prod_{i=1}^N p(c_i =c_i'| \mathbf{d})" width="235" height="53" />
 
 ## Autor regressive model
 This model decomposes the context chord probability distribution according to the chain rule:
