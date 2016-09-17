@@ -7,6 +7,11 @@ from operator import add
 
 NUM_NOTES=88
 def check_data(network, data_set):
+    """
+    Checks if the format of data_set align with the network
+    and return the data as numpy array
+
+    """
     data_input, data_targets = data_set
     assert len(data_input[0]) == network.num_inputs, \
         "ERROR: input size varies from the defined input setting"
@@ -18,24 +23,48 @@ def check_data(network, data_set):
 
     return inputs, targets
 
-def generate_binary_vectors(data_set):
+def generate_binary_vectors(data_set, target=True):
+    """ From two lists of chords (input and target), makes binary vectors
+    of fixed lenght with ones at indexes where notes occur, zeros elsewhere
+    If target=False, only one list of input chords is expected"""
+    if target:
+        data_input, data_target = data_set
 
-    data_input, data_target = data_set
+        input_vectors, target_vectors = [],[]
+        for this_data_input, this_data_target in zip(data_input,data_target):
+            input_vector = (np.zeros(88))
+            target_vector = (np.zeros(88))
 
-    input_vectors, target_vectors = [],[]
-    for this_data_input, this_data_target in zip(data_input,data_target):
-        input_vector = (np.zeros(88))
-        target_vector = (np.zeros(88))
+            input_vector[this_data_input] = 1.
+            target_vector[this_data_target] = 1.
+            input_vectors.append(input_vector)
+            target_vectors.append(target_vector)
 
-        input_vector[this_data_input] = 1.
-        target_vector[this_data_target] = 1.
-        input_vectors.append(input_vector)
-        target_vectors.append(target_vector)
+        return list(map(list,input_vectors)),list(map(list,target_vectors))
+    else:
+        input_vectors = []
+        for this_data_input in data_set:
+            input_vector = (np.zeros(88))
 
-    return list(map(list,input_vectors)),list(map(list,target_vectors))
+            input_vector[this_data_input] = 1.
+            input_vectors.append(input_vector)
+
+        return list(map(list, input_vectors))
+
 
 
 def read_all_data(context_size,full_context=False):
+    """
+    Generates (input, target) pairs on all four datasets.
+
+    Args:
+        context_size: the size of the neighborhood window
+        full_context: if True, a chord has only one target consisting of a concatenation of all context
+         (neighboring) chords.
+
+    Returns: train, validation, and test data for all four datasets (JSB chorales, piano-midi.de, nottingham and muse)
+
+    """
     files_dict = {}
     files_dict['jsb'] = 'JSB_Chorales.pickle'
     files_dict['piano'] = 'Piano-midi.de.pickle'
@@ -56,7 +85,25 @@ def read_all_data(context_size,full_context=False):
 
     return [all_train,all_context_train],[all_valid,all_context_valid], [all_test,all_context_test]
 
-def read_data(file_name, context_size, full_context=False):
+def flatten(file_name):
+    """ Given a pickle file containing train, validation and test data returns
+    a two lists containing the training and testing pieces flatten into one list of chords
+    """
+    dataset = pickle.load(open(file_name, 'rb'))
+    train_data = dataset['train']
+    test_data = dataset['test']
+
+    train_data = [y for x in train_data for y in x]
+    test_data = [y for x in test_data for y in x]
+
+    train_data=generate_binary_vectors(train_data,False)
+    test_data=generate_binary_vectors(test_data,False)
+
+    return train_data, test_data
+
+
+
+def read_data(file_name, context_size, full_context=False, augment=True):
     """"Load file_name and build (inputs, targets) pairs
 
 		Args:
@@ -193,7 +240,10 @@ def read_data(file_name, context_size, full_context=False):
 
     theta = list(range(-6, 0))
     theta.extend(range(1, 6))
-    augmented_data = augment_data(train_data, theta)
+    if augment:
+        augmented_data = augment_data(train_data, theta)
+    else:
+        augmented_data = train_data
 
     for seq in augmented_data:
         for i in range(len(seq)):

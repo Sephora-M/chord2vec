@@ -3,28 +3,26 @@ Train a simple sequence2sequence model to learn the notes in the context
 of an input chord
 """
 
+import copy
+import datetime
 import math
 import os
+import pickle
 import random
 import sys
 import time
-import datetime
-import numpy as np
 from operator import add
-import copy
 
-import pickle
-from six.moves import xrange
+import numpy as np
 import tensorflow as tf
+from six.moves import xrange
 
-from tensorflow.python.ops import variable_scope as vs
 PAD_ID = 0
 GO_ID = 1
 EOS_ID = 2
 UNK_ID = 3
 
-from chord2vec import seq2seq_model
-from chord2vec import seq2seqs_model
+from chord2vec.seq2seq import seq2seq_model, seq2seqs_model
 
 tf.app.flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
 tf.app.flags.DEFINE_float("learning_rate_decay_factor", 0.99,
@@ -279,9 +277,9 @@ def _get_max_seqLength(chords):
 def create_seq2seqs_model(session, forward_only):
     """Create the model or load parameters in session """
     model = seq2seqs_model.Seq2SeqsModel(FLAGS.notes_range, _buckets, FLAGS.num_units,
-                          FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.num_decoders, FLAGS.batch_size,
-                          FLAGS.learning_rate,
-                          FLAGS.learning_rate_decay_factor)
+                                         FLAGS.num_layers, FLAGS.max_gradient_norm, FLAGS.num_decoders, FLAGS.batch_size,
+                                         FLAGS.learning_rate,
+                                         FLAGS.learning_rate_decay_factor)
 
     checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
     if checkpoint and tf.gfile.Exists(checkpoint.model_checkpoint_path):
@@ -299,8 +297,8 @@ def create_seq2seq_model(session, forward_only, attention, result_file=None, bat
         batch_size = FLAGS.batch_size
 
     model = seq2seq_model.Seq2SeqModel(FLAGS.notes_range, FLAGS.notes_range, _buckets, FLAGS.num_units,
-                         FLAGS.num_layers, FLAGS.max_gradient_norm, batch_size, FLAGS.learning_rate,
-                         FLAGS.learning_rate_decay_factor,FLAGS.adam_epsilon,FLAGS.GD, forward_only=forward_only, attention=attention,l2_regularization=FLAGS.l2_reg,weight_decay=FLAGS.reg_factor)
+                                       FLAGS.num_layers, FLAGS.max_gradient_norm, batch_size, FLAGS.learning_rate,
+                                       FLAGS.learning_rate_decay_factor, FLAGS.adam_epsilon, FLAGS.GD, forward_only=forward_only, attention=attention, l2_regularization=FLAGS.l2_reg, weight_decay=FLAGS.reg_factor)
 
     if not same_param:
         checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
@@ -491,10 +489,6 @@ def train():
                     result_file.write("  avg train batch:  loss %.4f perplexity %.4f \n" % (epoch_loss, epoch_perplexity))
                     epoch_loss = 0.0
 
-                    #_,train_loss, train_ppx = test_model_in_batches(sess, model, train_set)
-                    #previous_train_ppx.append(train_ppx)
-                    #print("  train:  loss %.4f perplexity %.4f" % (train_loss, train_ppx))
-                    #result_file.write("  train:  loss %.4f perplexity %.4f \n" % (train_loss, train_ppx))
 
                     _,valid_loss, valid_ppx = test_model_in_batches(sess, model, valid_set)
 
@@ -540,8 +534,11 @@ def train():
             pickle.dump(result_dic,open(FLAGS.train_dir + '/results.pickle','wb'))
             result_file.close()
 
-def test_model(scope, sess, same_param=True,train=False, valid=False, test=False):
-    #TODO: , l2 reg, remove max epoch
+def test_model(sess, same_param=True,train=False, valid=False, test=False):
+    """
+    Computes the error on either the train, valid or test data
+
+    """
     train_set, valid_set, test_set = read_data(FLAGS.data_file, context_size=int(FLAGS.num_decoders / 2))
     data_set = []
     if train:
@@ -554,7 +551,8 @@ def test_model(scope, sess, same_param=True,train=False, valid=False, test=False
 
     batch_size = len(data_set[0])
     model = create_seq2seq_model(sess, True,  attention=FLAGS.attention, result_file=None, batch_size=batch_size, same_param=same_param)
-
+    embedding_vects = []
+    loss, ppx = 0.0,0.0
     for bucket_id in xrange(len(_buckets)):
 
         if len(valid_set[bucket_id]) == 0:
@@ -563,15 +561,28 @@ def test_model(scope, sess, same_param=True,train=False, valid=False, test=False
         encoder_final_state, loss, ppx = _get_test_batch_make_step(sess, model, FLAGS.multiple_decoders,
                                                    data_set, FLAGS.num_decoders, bucket_id, True,
                                                    batch_id=1)
-    return encoder_final_state, loss,ppx
+        embedding_vects.append(encoder_final_state)
+
+    return embedding_vects, loss,ppx
 
 def test_model_in_batches(sess, model, data_set,same_param=True):
+    """
+    Computes average batch error on either the train, valid or test data
+    Args:
+        sess: a tensorflow session
+        model: a seq2seq model
+        data_set: the data set we want to evaluate
+        same_param: if False, restore the variable from a saved model in FLAGS.train_dir
+    Returns: the encoder final
 
+    """
     if not same_param:
         checkpoint = tf.train.get_checkpoint_state(FLAGS.train_dir)
         print('testing on the validated model..')
         model.saver.restore(sess, checkpoint.model_checkpoint_path)
 
+    embedding_vects = []
+    avg_loss, avg_ppx = 0.0,0.0
     for bucket_id in xrange(len(_buckets)):
         num_batches = int(len(data_set[bucket_id]) / FLAGS.batch_size)
         total_loss = 0.0
@@ -585,13 +596,15 @@ def test_model_in_batches(sess, model, data_set,same_param=True):
                                                        batch_id=(1 + batch_id))
             #print("loss of batch %d : %.4f " % (batch_id,loss))
             total_loss += loss
+            embedding_vects.append(encoder_final_state)
 
         avg_loss = total_loss / num_batches
         avg_ppx = math.exp(avg_loss) if loss < 300 else float('inf')
 
-    return encoder_final_state, avg_loss, avg_ppx
+    return embedding_vects, avg_loss, avg_ppx
 
 def get_vector_representation(data_point):
+    """ Returns the embedding vector for a data point"""
     with tf.Session() as sess:
         with tf.variable_scope("model") as scope:
             batch_size=1
@@ -670,7 +683,7 @@ def self_test():
         print("Self-test for sequence-to-sequences model.")
         # Create model with vocabularies of 10, 2 small buckets, 2 layers of 32.
         model = seq2seqs_model.Seq2SeqsModel(88, [(3, 3), (6, 6)], 32, 2,
-                                            5.0, 2, 32, 0.3, 0.99)
+                                             5.0, 2, 32, 0.3, 0.99)
         sess.run(tf.initialize_all_variables())
 
         # Fake data set for both the (3, 3) and (6, 6) bucket.

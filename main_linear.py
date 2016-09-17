@@ -1,10 +1,14 @@
+"""
+Train a linear chord2vec (numpy implementation) using "L-BFGS-B" optimizer
+"""
+
 import sys
 from chord2vec.linear_models.learning import optimize
-from chord2vec.linear_models.learning import RMSprop
 from chord2vec.linear_models.linear_model import LinearModel1
 from chord2vec.linear_models.functions import *
 import pickle
 from chord2vec.linear_models import data_processing as dp
+
 
 NUM_NOTES=88
 D=512
@@ -34,10 +38,6 @@ def create_model(NUM_NOTES=NUM_NOTES, D=D, load_model=None):
 def train(model, train_set, test_set,cost_function = binary_cross_entropy_cost,save_file=None):
     optimize(model, train_set, test_set, cost_function, method="L-BFGS-B", save_file=save_file)
 
-# Train the model using LBFGS
-#optimize( model, train_set,  test_set, cost_function, method = "L-BFGS-B", save_trained_model = True)
-
-#print(model.update(test_set[0][0]),True)
 
 def check_grad():
  #for testing prupose

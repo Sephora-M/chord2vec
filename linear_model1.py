@@ -1,9 +1,5 @@
 '''
-A Multilayer Perceptron implementation example using TensorFlow library.
-This example is using the MNIST database of handwritten digits
-(http://yann.lecun.com/exdb/mnist/)
-Author: Aymeric Damien
-Project: https://github.com/aymericdamien/TensorFlow-Examples/
+Linear model implementation in tensorflow
 '''
 
 import tensorflow as tf
@@ -11,18 +7,6 @@ from chord2vec.linear_models import data_processing as dp
 import numpy as np
 import random
 import sys
-
-# print('Loading data ...')
-# dic=pickle.load(open('JSB_processed.pkl','rb'))
-# train_chords = dic['t']
-# test_chords = dic['te']
-# valid_chords = dic['v']
-#
-# train_set = dp.generate_binary_vectors(train_chords)
-# data_size = len(train_set[0])
-# test_set = dp.generate_binary_vectors(test_chords)
-# valid_set = dp.generate_binary_vectors(valid_chords)
-# input_valid, target_valid = valid_set
 
 
 def load_data(file_name = "JSB_Chorales.pickle"):
@@ -44,14 +28,6 @@ def load_data(file_name = "JSB_Chorales.pickle"):
     total_batch_test = int(data_size_te / batch_size)
 
     return train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid
-
-#train_set = [[[0, 0, 0, 1,1, 0, 1, 0], [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
-#           [[1, 1, 0, 1,0, 1, 1, 0], [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
-#
-#test_set = [[[0, 0, 0, 1,1, 0, 1, 0], [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
-#           [[1, 1, 0, 1,0, 1, 1, 0], [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
-#data_size = len(train_set[0])
-
 
 # Parameters
 learning_rate = 0.001

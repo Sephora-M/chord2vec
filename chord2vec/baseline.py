@@ -24,7 +24,6 @@ def get_data(dic=None):
         dic = pickle.load(open('JSB_processed.pkl', 'rb'))
     training_data = dic['t']
 
-
     test_data = dic['te']
     test_data = dp.generate_binary_vectors(test_data)[0]
 
@@ -34,12 +33,13 @@ def get_data(dic=None):
 
     return  training_data, train_data, test_data, valid_data
 
-def eval(data_file, epsilon = 1e-8):
+def eval(data_file, prob_distr=None, epsilon = 1e-8):
     training_data, valid_data, test_data = dp.read_data(data_file,1)
     test_data = dp.generate_binary_vectors(test_data)[0]
     train_data = dp.generate_binary_vectors(training_data)[0]
 
-    prob_distr = normalized_density([train_data])
+    if prob_distr is None:
+        prob_distr = normalized_density([train_data])
 
     losses = 0.0
     num_notes = len(test_data[0])

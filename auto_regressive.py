@@ -16,13 +16,6 @@ import sys
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import gen_math_ops
 
-# train_set = [[[0.0, 0.0, 0.0, 1,1, 0, 1, 0], [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1]], \
-#             [[1, 1, 0, 1,0, 1, 1, 0], [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1]]]
-#
-# test_set = [[ [1, 1, 1, 1,0, 0, 1, 1], [1, 1, 1, 0,0, 1, 0, 1], [0, 0, 0, 1,0, 0, 0, 1], [1, 0, 0, 0,1, 0, 0, 1]], \
-#            [ [0, 0, 1, 1,1, 1, 1, 1], [0, 0, 1, 0,1, 0, 0, 1], [1, 1, 0, 1,1, 1, 0,1], [0, 1, 0, 0,0, 1, 0, 1]]]
-#data_size = len(train_set[0])
-
 # Parameters
 learning_rate = 0.002
 training_epochs = 200
@@ -75,23 +68,18 @@ def cumsum_weights(input, W, r=D):
 
 def normalize(input):
     return tf.truediv(input, tf.maximum(1.0, tf.reduce_sum(input, 1, keep_dims=True)))
-# Create model
-# def nade_like(input, weights):
-#     hidden1 = tf.matmul( tf.truediv(input, tf.maximum(1.0,tf.reduce_sum(input, 1, keep_dims=True)) ) , weights['hidden1'])
-#
-#     hidden2 = tf.sigmoid(tf.matmul(hidden1, weights['hidden2']))
-#
-#     # Output layer
-#     out_layer = (tf.matmul(hidden2, tf.mul(weights['pad'],weights['out'])) + bias['out'])
-#     return out_layer
 
-def nade_like(input, target, weights, bias):
 
-    hidden01 = tf.matmul(normalize(input), weights['M1']) # Vd
+def auto_regressive_model(input, target, weights, bias):
+    """
+    Builds the auto regressive model. For details on the model, refer to the written report
+    """
 
-    hidden01 = tf.batch_matmul(tf.expand_dims(hidden01,2),tf.ones([batch_size,1,NUM_NOTES])) # Vd augmented to D across 2 dimension
+    hidden01 = tf.matmul(normalize(input), weights['M1']) # V_d
 
-    hidden02 = cumsum_weights(normalize(target), weights['M2'],D)
+    hidden01 = tf.batch_matmul(tf.expand_dims(hidden01,2),tf.ones([batch_size,1,NUM_NOTES])) # V_d augmented to D across  dimension 2
+
+    hidden02 = cumsum_weights(normalize(target), weights['M2'],D)  # V_c
 
     hidden = hidden01 + hidden02
 
@@ -106,16 +94,17 @@ def nade_like(input, target, weights, bias):
     y = tf.squeeze(y)
 
     output = tf.reshape(y,[batch_size,NUM_NOTES])
-        #tf.batch_matmul(tf.transpose(hidden,perm=[0, 2, 1]),[weights['W']]*batch_size)
-    #tf.matmul(hidden, weights['W'])
+
     return output
 
 def norm_cumsum(target):
+    """ Normalized cumulative sum"""
     cum_sum = cumsum(target)
     return tf.truediv(cum_sum, tf.maximum(1.0,tf.reduce_sum(cum_sum, 1, keep_dims=True)))
 
 
 def cumsum(target):
+    """ Cumulative sum"""
     triangle = ones_triangular(NUM_NOTES)#tf.constant(ones_triangular(NUM_NOTES))
     return tf.matmul(target,triangle)
 
@@ -156,11 +145,14 @@ def train(file_name,checkpoint_path='save_models/nade3/nade_like_D1024_batch128.
 
     print('Create model ...')
 
-    pred = nade_like(input, target, weights,bias)
+    pred = auto_regressive_model(input, target, weights, bias)
     # Define loss and optimizer
+
     cost = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(pred, target), 1))
+
     optimizer = tf.train.AdamOptimizer(epsilon=1e-00, learning_rate=learning_rate).minimize(cost)
     # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
+
     # Initializing the variables
     init = tf.initialize_all_variables()
     saver = tf.train.Saver(tf.all_variables(), max_to_keep=1)
@@ -179,10 +171,6 @@ def train(file_name,checkpoint_path='save_models/nade3/nade_like_D1024_batch128.
             print("using fresh parameters...")
             sess.run(init)
 
-
-        # valid_set=test_set
-        # input_valid, target_valid = valid_set
-        # input_train, target_train = train_set
         train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid = load_data(file_name)
 
         batch_vx, batch_vy = get_batch(valid_set, 0)
@@ -260,7 +248,7 @@ def train(file_name,checkpoint_path='save_models/nade3/nade_like_D1024_batch128.
 def print_error(file_name,checkpoint_path="save_models/new", print_train=False, print_valid=False):
     print('Create model ...')
 
-    pred = nade_like(input, target, weights, bias)
+    pred = auto_regressive_model(input, target, weights, bias)
     # Define loss and optimizer
     cost = tf.reduce_mean(tf.reduce_sum(tf.nn.sigmoid_cross_entropy_with_logits(pred, target), 1))
     optimizer = tf.train.AdamOptimizer(epsilon=1e-03, learning_rate=learning_rate).minimize(cost)
@@ -276,26 +264,6 @@ def print_error(file_name,checkpoint_path="save_models/new", print_train=False, 
         else:
             print("using fresh parameters...")
             sess.run(init)
-
-        # print('Loading data ...')
-        # dic = pickle.load(open('JSB_processed.pkl', 'rb'))
-        # train_chords = dic['t']
-        # test_chords = dic['te']
-        # valid_chords = dic['v']
-        #
-        # train_set = dp.generate_binary_vectors(train_chords)
-        # # input_train, target_train = train_set
-        # test_set = dp.generate_binary_vectors(test_chords)
-        # valid_set = dp.generate_binary_vectors(valid_chords)
-        # # input_valid, target_valid = valid_set
-        #
-        # data_size = len(train_set[0])
-        # data_size_valid = len(valid_set[0])
-        # data_size_te = len(test_set[0])
-        #
-        # total_batch = int(data_size / batch_size)
-        # total_batch_valid = int(data_size_valid / batch_size)
-        # total_batch_test = int(data_size_te / batch_size)
 
         train_set, test_set, valid_set, total_batch, total_batch_test, total_batch_valid = load_data(file_name)
 

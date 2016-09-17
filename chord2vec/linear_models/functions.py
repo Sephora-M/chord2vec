@@ -3,7 +3,7 @@ from numpy import linalg as LA
 
 def binary_cross_entropy_cost(outputs, targets, derivative=False, epsilon=1e-8):
     """
-    the binary cross entropy cost
+    Binary cross entropy cost
     """
     # preventing overflow
     outputs = np.clip(outputs, epsilon, 1 - epsilon)
@@ -19,11 +19,6 @@ expit = lambda x: 1.0 / (1 + np.exp(-x))
 def sigmoid_function(signal, derivative=False):
     """
     Sigmoid function
-    Args:
-        signal:
-        derivative:
-
-    Returns:
 
     """
     # preventing overflow.
@@ -47,6 +42,9 @@ def linear_function( signal, derivative=False ):
 
 
 def zero_padding(weights_layer):
+    """
+    Returns a triangular matrix with all ones in the upper triangle
+    """
     num_units = weights_layer.shape[1]
     padding = np.zeros((num_units,num_units), float)
     for i in range(num_units):
@@ -57,12 +55,7 @@ def zero_padding(weights_layer):
 
 def normalize_function(signal, derivative=False):
     """
-    Normalize signal
-    Args:
-        signal:
-        derivative:
-
-    Returns:
+    Normalize signal by dividing the signal with the L1 norm
 
     """
     if derivative:
@@ -71,6 +64,10 @@ def normalize_function(signal, derivative=False):
         return np.array([s/ (LA.norm(s, ord=1)) if (LA.norm(s, ord=1))>0 else s for s in signal])
 
 def normalize(signal, derivative=False):
+    """
+    Identical as normalize_function, but returns lists
+
+    """
     if derivative:
         # Return the partial derivation of the activation function
         ones = [[]]*signal.shape[0]
