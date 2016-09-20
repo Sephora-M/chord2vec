@@ -1,9 +1,5 @@
 '''
-A Multilayer Perceptron implementation example using TensorFlow library.
-This example is using the MNIST database of handwritten digits
-(http://yann.lecun.com/exdb/mnist/)
-Author: Aymeric Damien
-Project: https://github.com/aymericdamien/TensorFlow-Examples/
+A tensorflow implementation of the Autogressive chord2vec model
 '''
 
 import tensorflow as tf
