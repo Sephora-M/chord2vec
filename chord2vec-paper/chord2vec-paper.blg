@@ -1,0 +1,52 @@
+This is BibTeX, Version 0.99d (TeX Live 2012)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: chord2vec-paper.aux
+The style file: plainnat.bst
+Database file #1: bibli.bib.bib
+A bad cross reference---entry "bl"
+refers to entry "ICML12", which doesn't exist
+Warning--I didn't find a database entry for "ICML12"
+Warning--empty journal in allan2005harmonising
+Warning--empty booktitle in bl
+You've used 7 entries,
+            2773 wiz_defined-function locations,
+            636 strings with 5998 characters,
+and the built_in function-call counts, 3098 in all, are:
+= -- 267
+> -- 201
+< -- 3
++ -- 67
+- -- 60
+* -- 249
+:= -- 495
+add.period$ -- 23
+call.type$ -- 7
+change.case$ -- 41
+chr.to.int$ -- 7
+cite$ -- 16
+duplicate$ -- 142
+empty$ -- 240
+format.name$ -- 73
+if$ -- 633
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 7
+newline$ -- 45
+num.names$ -- 28
+pop$ -- 77
+preamble$ -- 1
+purify$ -- 34
+quote$ -- 0
+skip$ -- 114
+stack$ -- 0
+substring$ -- 58
+swap$ -- 6
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 77
+warning$ -- 2
+while$ -- 25
+width$ -- 0
+write$ -- 98
+(There was 1 error message)
