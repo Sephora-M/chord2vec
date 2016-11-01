@@ -92,6 +92,7 @@
 
 \newcommand{\skipgram}{\textit{Skip-gram}}
 \newcommand{\wordtovec}{\textit{word2vec}}
+\newcommand{\chordtovec}{\textit{chord2vec}}
 \newcommand{\seqtoseq}{\textit{sequence-to-sequence}}
 \newcommand{\ie}{\textit{i.e.}}
 
@@ -329,7 +330,7 @@ The polyphony varies from 0 to 15 and the average number of simultaneous notes i
 In addition to the previously mentioned models, we compare our results with the following models. \textbf{Random} is the simplest baseline with uniform $p(c_i = c_i' | d ) = 0.5$. \textbf{Marginal} is the smoothed empirical distribution of the notes in the training data, $p(c_i = 1 | d )= \frac{z_i + \alpha}{|\T|+\alpha}$ where $z_i$ is the number of the occurrences of note $i$ in the training set and $\alpha = 1$ is the smoothing constant.
 %
 \subsubsection{Implementation Details}
-The linear chord2vec model and the autoregressive chord2vec were trained in batches of size 128 with  Adam Optimizer using $D = 1024$. Each model is optimized for 200 epochs, but the final model is the one leading to the lowest validation error.  
+The linear \chordtovec\ model and the autoregressive \chordtovec\ were trained in batches of size 128 with  Adam Optimizer using $D = 1024$. Each model is optimized for 200 epochs, but the final model is the one leading to the lowest validation error.  
 %
 Our sequence-to-sequence model architecture is a multi-layer LSTM with 2 layers of 512 hidden units each. To allow sequences of varying length, standard bucketing and padding methods are used. We append to each target chord an end-of-sequence symbol.
 %
@@ -337,7 +338,7 @@ We implemented all three models using Google's Tensorflow library.
 
 \section{Results}
 
-The negative log likelihoods on the test data for all models and on all data sets are presented in Table~\ref{tab:results}. First, we observe that our simple linear model, despite the independence assumptions, is able to actually learn something beyond the marginal distribution of the training set. Secondly, as expected, we observe that the autoregressive model achieves better scores than the simple linear model on all data sets, confirming our hypothesis that the notes in a chord are not independent of each other. Lastly, it appears that the Sequence-to-Sequence model is by far the strongest model overall.   
+The negative log likelihoods on the test data for all models and on all data sets are presented in Table~\ref{tab:results}. First, we observe that our simple linear model, despite the independence assumptions, is able to actually learn something beyond the marginal distribution of the training set. Secondly, as expected, we observe that the autoregressive model achieves better scores than the simple linear model on all data sets, confirming our hypothesis that the notes in a chord are not independent of each other. Lastly, it appears that the /seqtoseq/ model is by far the strongest model overall.   
 %
 \begin{table}[ht]
 \centering
@@ -356,7 +357,7 @@ Seq2Seq c2v & 1.11 &  0.50 & 1.52 & 1.78 & 1.22
 %
 \section{Summary and Future work}
 \label{sec:summary}
-Our study has revealed that the Sequence-to-Sequence model is dramatically superior to our simpler methods. However, in the case of text classification problems, it has been shown that simpler architectures can lead to results that are comparable to deep learning models in terms of accuracy, but much faster for training and evaluation \citep{JoulinGBM16}.
+Our study has revealed that the /seqtoseq/ model is dramatically superior to our simpler methods. However, in the case of text classification problems, it has been shown that simpler architectures can lead to results that are comparable to deep learning models in terms of accuracy, but much faster for training and evaluation \citep{JoulinGBM16}.
 With this in mind, a direction for future work would be to develop another model based on the \skipgram\ model but without making the assumption of independence between the notes occurring in a chord. 
 
 One could also visualize the learned vectors by using dimensionality reduction techniques. An inspection of such low dimension vectors could help understanding whether the embedding vectors capture interesting musically relevant information.
