@@ -101,7 +101,7 @@
 \maketitle
 
 \begin{abstract}
-  In natural language processing, the well-known \wordtovec\ model allows to learn  vector representations of words that carry meaningful information on the syntactic and semantic relationships between the individual words. In our work, we investigate whether similar high-quality embeddings can be found for symbolic music data. We introduce three NLP inspired models to learn vector representations of chords and we evaluate their performance. We show that an adaptation of the \seqtoseq\ model is by far superior to the other proposed model. 
+  In natural language processing, the well-known \skipgram\ model learns vector representations of words that carry meaningful syntactic and semantic information. In our work, we investigate whether similar high-quality embeddings can be found for symbolic music data. We introduce three NLP inspired models to learn vector representations of chords and we evaluate their performance. We show that an adaptation of the \seqtoseq\ model is by far superior to the other proposed model. 
   
 \end{abstract}
 
@@ -118,16 +118,16 @@ In the spirit of the \skipgram\ model \citep{mik2013}, the heuristic we use to a
 \end{equation} 
 %
 where for the remainder of this report, we assume $j=1$.
+Whereas text can be represented as a sequence of words, each encoded by a ``one-hot" vector, for music we need a ``many-hot" vector to represent a chord. This is because more than one note may sound simultaneously.
 
-In the next \autoref{sec:models} we introduce our three NLP inspired models. In \autoref{sec:experiments} we evaluate the models on five datasets, before summarising and suggesting directions for future work in \autoref{sec:summary}. 
+In the next \autoref{sec:models} we introduce our three NLP inspired models. The first is based on a simple conditional independence assumption, the second relaxes this assumption, while the third adopts a more sophisticated \seqtoseq\ architecture. In \autoref{sec:experiments} we evaluate the models on five datasets, before summarising and suggesting directions for future work in \autoref{sec:summary}. 
 
 \section{The Proposed Models}
 \label{sec:models}
 \subsection{Bilinear model}
-Our first model is an adaptation of the \skipgram\ model introduced by \citet{mik2013}. Whereas text can be represented as a sequence of words, each of which encoded by a ``one-hot" vector, for music we need a ``many-hot" vector to represent a chord. This is because more than one note can be heard simultaneously. Hence, we replace the last softmax layer in \skipgram\ by a sigmoid layer, to predict each note individually.  
+Our first model is a simplistic adaptation of the \skipgram\ model introduced by \citet{mik2013} to the many-hot case. Here, we replace the last softmax layer in \skipgram\ by a sigmoid layer with $N$ outputs, to predict each note individually.  
 
-
-The architecture of the first proposed model is a feed forward neural network consisting of input, hidden and output layers. At the input layer, a chord is encoded using a fixed length binary vector $\nolinebreak{\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N}$, where $N$ is the number of notes in the vocabulary. In this chord representation, the entries that are set to $1$ correspond to the notes that are \textit{on} in the chord, whereas the notes that are \textit{off} are set to $0$. 
+The architecture is a feed forward neural network consisting of input, hidden and output layers. At the input layer, a chord is encoded using a fixed length binary vector $\nolinebreak{\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N}$, where $N$ is the number of notes in the vocabulary. In this chord representation, the entries that are set to $1$ correspond to the notes that are \textit{on} in the chord, whereas the notes that are \textit{off} are set to $0$. 
 
 The weights between the input layer and the hidden layer can be represented by a matrix $M\in \R^{D \times N}$. Similarly, the weights between the hidden layer and the output layer can be represented by a matrix $\M\in \R^{N \times D}$. 
 
@@ -193,7 +193,7 @@ The weights between the input layer and the hidden layer can be represented by a
 %\label{fig:lin-archi}
 %\end{figure}
 
-The $D$-dimensional vector representation $\boldvd$ of the associated chord $\boldd$ is simply the normalized sum of the columns of $M$ that correspond to the notes occurring in $\boldd$:
+The $D$-dimensional vector representation $\boldvd$ of the associated chord $\boldd$ is simply the normalized sum of the columns of $M$ that correspond to the notes occurring in $\boldd \in \{0,1\}^N$:
 \[ \boldvd = M\frac{ \boldd}{\| \boldd \|_1}
 \]
 To compute the probabilities in (\ref{eq:c2v_obj}) under this model, we make a  conditional independence assumption between the notes in a context chord $\boldc$ given a chord $\boldd$, \ie\
@@ -287,7 +287,7 @@ p(y_1,\ldots,y_{T'} | x_1, \ldots, x_T,\theta) = \prod_{t=1}^{T'} p(y_t|\boldsym
 % The sequence-to-sequence model can be used to learn embeddings for chords, by training the model to learn the context of a given chord. 
 %
 % At the chord level, the encoder projects all notes in a chord into a joint note representation and a decoder generates all notes in a chord given a chord representation and previously generated notes.
-In our setting, we simply concatenate elements of the neighbourhood chords, along with an appropriately inserted special symbol (say, $N+1$, where we recall that $\{1,2,\dots,N\}$ is the set of notes) which serves as an end of chord marker (similar to an end of sentence marker in NLP). For example, if $\boldd=\boldc_i=(60,64,67)$ and the neighbourhood consists of chords $\boldc_{i-1}=(59)$ and $\boldc_{i+1}=(62,65,69)$, then we have $\boldx=(60,62,67)$ as our input sequence $\boldy=(59,N+1,62,65,69)$ as our output sequence. We take the corresponding $\boldsymbol{v}$ as the embedding for $\boldd$.
+In our setting, we form the $\boldsymbol{y}$ by concatenating elements of the neighbourhood chords. We appropriately insert a special symbol (say, $\epsilon$) which serves as an end of chord marker (similar to an end of sentence marker in NLP). For example, if $\boldd=\boldc_i=(60,64,67)$ and the neighbourhood consists of chords $\boldc_{i-1}=(59)$ and $\boldc_{i+1}=(62,65,69)$, then we have $\boldx=(60,62,67)$ as our input sequence $\boldy=(59,\epsilon,62,65,69)$ as our output sequence. We take the corresponding $\boldsymbol{v}$ as the embedding for $\boldd$.
 % indicating the end of the first chord. The goal then is to estimate
 % $
 % p(c_1, \ldots, c_T | d_1,\ldots,d_{T'})\,,
@@ -325,10 +325,8 @@ We consider five datasets of varying complexity, taken from \cite{bl}:
 The polyphony varies from 0 to 15 and the average number of simultaneous notes is $3.9$. The range of notes spans the whole range of piano from A0 to C8, \ie\ $N = |\N| = 88$. We also augmented the training data as follows: we transpose each piece by $\phi$ semi-tones, for $\phi = -6, -5, \dots, 4, 5.$
 %
 \subsection{Baselines}
-In addition to the previously mentioned models, we compare our results with the following models:
-\subparagraph{Random:} the simplest baseline is uniformly random, \ie\ $p(c_i = c_i' | d ) = 0.5$.
-\subparagraph{Marginal distribution:} the second model is the smoothed empirical distribution of the notes in the training data, $p(c_i = 1 | d )= \frac{z_i + \alpha}{|\T|+\alpha}$ where $z_i$ is the number of the occurrences of note $i$ in the training set and $\alpha = 1$ is the constant used for additive smoothing.
-
+In addition to the previously mentioned models, we compare our results with the following models. \textbf{Random} is the simplest baseline with uniform $p(c_i = c_i' | d ) = 0.5$. \textbf{Marginal} is the smoothed empirical distribution of the notes in the training data, $p(c_i = 1 | d )= \frac{z_i + \alpha}{|\T|+\alpha}$ where $z_i$ is the number of the occurrences of note $i$ in the training set and $\alpha = 1$ is the smoothing constant.
+%
 \subsubsection{Implementation Details}
 The linear chord2vec model and the autoregressive chord2vec were trained in batches of size 128 with  Adam Optimizer using $D = 1024$. Each model is optimized for 200 epochs, but the final model is the one leading to the lowest validation error.  
 %
