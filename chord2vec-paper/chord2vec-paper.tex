@@ -223,7 +223,7 @@ This model is not expected to perform well, mainly because of the independence a
 
 \subsection{Autoregressive model}
 
-This model is inspired by the The Neural Autoregressive Distribution Estimator (NADE) which models the distribution of high-dimensional vectors of discrete variables \citep{larochelle2011}. We decompose the context chord probability distribution according to the chain rule, so that
+To overcome the necessity of making the independence assumption between the notes appearing in a chord while retaining tractability, we introduce another model inspired by the The Neural Autoregressive Distribution Estimator (NADE) which models the distribution of high-dimensional vectors of discrete variables \citep{larochelle2011}. We decompose the context chord probability distribution according to the chain rule, so that
 %
 \begin{equation}
 p(\boldc =\boldc' | \boldd) = \prod_{i=1}^N  p(c_i =c_i'|  \boldd, c_{<i}) \,,
@@ -253,7 +253,8 @@ Hence, like NADE we retain tractability while relaxing the conditional independe
 %
 \subsection{Sequence-to-sequence model}
 %
-Finally, we propose to adapt the famous \seqtoseq\ model \citep{SutskeverVL14} to the task of learning chord embeddings. In this setting, a chord $c$ is represented as an (arbitrary length) ordered sequence of notes, so that $c_i\leq c_{i+1}\in\left\{1,2,\dots,N\right\}$.
+Finally, we propose to adapt the famous \seqtoseq\ model \citep{SutskeverVL14} to the task of learning chord embeddings. In language models, RNNs are useful for predicting future elements of a sequence given prior elements. The \seqtoseq\ model builds on top of language models  to create translation models that operate on two sequences -- the input sequence and the translated output sequence. It looks at each element of the sequence and tries to sequentially predict the next elements of the output sequence. We then suggest to train a \seqtoseq\ model to predict the elements in the temporally neighboring chords given an input chords.    
+In this setting, a chord $c$ is represented as an (arbitrary length) ordered sequence of notes, so that $c_i\leq c_{i+1}\in\left\{1,2,\dots,N\right\}$.
 
 Appropriately, \seqtoseq\ models learn a mapping of input sequences of varying lengths to output sequences also of varying lengths, using a neural network architecture known as an RNN Encoder-Decoder. 
 %\begin{figure}[ht]
@@ -287,7 +288,7 @@ p(y_1,\ldots,y_{T'} | x_1, \ldots, x_T,\theta) = \prod_{t=1}^{T'} p(y_t|\boldsym
 % The sequence-to-sequence model can be used to learn embeddings for chords, by training the model to learn the context of a given chord. 
 %
 % At the chord level, the encoder projects all notes in a chord into a joint note representation and a decoder generates all notes in a chord given a chord representation and previously generated notes.
-In our setting, we form the $\boldsymbol{y}$ by concatenating elements of the neighbourhood chords. We appropriately insert a special symbol (say, $\epsilon$) which serves as an end of chord marker (similar to an end of sentence marker in NLP). For example, if $\boldd=\boldc_i=(60,64,67)$ and the neighbourhood consists of chords $\boldc_{i-1}=(59)$ and $\boldc_{i+1}=(62,65,69)$, then we have $\boldx=(60,62,67)$ as our input sequence $\boldy=(59,\epsilon,62,65,69)$ as our output sequence. We take the corresponding $\boldsymbol{v}$ as the embedding for $\boldd$.
+In our setting, we form the $\boldsymbol{y}$ by concatenating elements of the neighbourhood chords. We appropriately insert a special symbol (say, $\epsilon$) which serves as an end of chord marker (similar to an end of sentence marker in NLP). For example, if $\boldd=\boldc_i=(60,64,67)$ and the neighbourhood consists of chords $\boldc_{i-1}=(59)$ and $\boldc_{i+1}=(62,65,69)$, then we have $\boldx=(60,62,67)$ as our input sequence $\boldy=(59,\epsilon,62,65,69,\epsilon)$ as our output sequence. We take the corresponding $\boldsymbol{v}$ as the embedding for $\boldd$.
 % indicating the end of the first chord. The goal then is to estimate
 % $
 % p(c_1, \ldots, c_T | d_1,\ldots,d_{T'})\,,
