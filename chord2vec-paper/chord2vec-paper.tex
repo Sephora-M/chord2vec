@@ -75,16 +75,16 @@
    Affiliation \\
    Address \\
    \texttt{email} \\
-   \AND
+   \And
    Coauthor3 \\
    Affiliation \\
    Address \\
    \texttt{email} \\
-  \And
-   Coauthor \\
-   Affiliation \\
-   Address \\
-   \texttt{email} \\
+%%  \And
+%%   Coauthor \\
+%%   Affiliation \\
+%%   Address \\
+%%   \texttt{email} \\
   %% \And
   %% Coauthor \\
   %% Affiliation \\
@@ -326,7 +326,7 @@ We implemented all three models using Google's Tensorflow library.
 
 \section{Results}
 
-The negative log likelihoods on the test data for all models and on all data sets are presented in Table~\ref{tab:results}. First, we observe that our simple linear model, despite the independence assumptions, is able to actually learn something beyond the marginal distribution of the training set. Secondly, as expected, we observe that the autoregressive model achieves better scores than the simple linear model on all data sets, confirming our hypothesis that the notes in a chord are not independent of each other. Lastly, it appears that the \seqtoseq\ model is by far the strongest model overall in terms of average test set log likelihood.   
+The negative log likelihoods on the test data for all models and on all data sets are presented in Table~\ref{tab:results}. First, we observe that our simple linear model (Linear c2v), despite the independence assumptions, is able to actually learn something beyond the marginal distribution of the training set. Secondly, as expected, we observe that the autoregressive model (Autoreg. c2v) achieves better scores than the simple linear model on all data sets, confirming our hypothesis that the notes in a chord are not independent of each other. Lastly, it appears that the \seqtoseq\ model (Seq2seq c2v) is by far the strongest model overall in terms of average test set log likelihood.   
 %
 \begin{table}[ht]
 \centering
