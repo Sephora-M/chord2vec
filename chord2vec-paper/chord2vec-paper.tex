@@ -50,7 +50,7 @@
 
 
 
-\title{Chord2Vec - Learning Chords Embeddings}
+\title{Chord2Vec: Learning  Musical Chord Embeddings}
 
 % The \author macro works with any number of authors. There are two
 % commands used to separate the names and addresses of multiple
@@ -108,7 +108,7 @@
 
 \section{Introduction}
 
-The \wordtovec\ model by \citet{mik2013} learns vector representations of words that carry syntactic and semantic information which has proven powerful in various natural language processing (NLP) tasks. In this work, we investigate whether similar embeddings can be found for symbolic music data. % As in language, arbitrary encodings of polyphonic music provide no useful information regarding the relationships that may exist between the individual musical chords. The main goal of this study is to introduce techniques that can be used for learning high-quality embedding chord vectors from sequences of polyphonic music. 
+The \wordtovec\ model by \citet{mik2013} learns vector representations of words that carry syntactic and semantic information. These representations have proven powerful in various natural language processing (NLP) tasks. In this work, we investigate whether similar embeddings can be found for symbolic music data. % The main goal of this study is to introduce techniques that can be used for learning high-quality embedding chord vectors from sequences of polyphonic music. 
 
 In the spirit of the \skipgram\ model \citep{mik2013}, the heuristic we use to achieve this involves finding chord representations that are useful for predicting the temporally neighboring chords in our corpus of musical pieces. Given such a corpus of ordered musical chords  $\T = \{\boldd_1, \boldd_2, \ldots, \boldd_T\}$ and a neighborhood of size $2j$ defined by $ C(\boldd_t) = \{\boldd_{t+j}, -m \leq j \leq m , j \neq 0\}$, the objective is to maximize the average log probability with respect to some model parameters~$\theta$:
 %
@@ -119,14 +119,14 @@ In the spirit of the \skipgram\ model \citep{mik2013}, the heuristic we use to a
 \end{equation} 
 %
 where for the remainder of this report, we assume $j=1$.
-Whereas text can be represented as a sequence of words, each encoded by a ``one-hot" vector, for music we need a ``many-hot" vector to represent a chord. This is because more than one note may sound simultaneously.
+Text may be represented as a sequence of words, each encoded by a ``one-hot" vector. For music we use a ``many-hot" vector to represent a chord, as more than one note may sound simultaneously. As in language, this arbitrary encodings of polyphonic music provides little information regarding the harmonic function of individual chords and the relationships that may exist between them. 
 
 In the next \autoref{sec:models} we introduce our three NLP inspired models. The first is based on a simple conditional independence assumption, the second relaxes this assumption, while the third adopts a more sophisticated \seqtoseq\ architecture. In \autoref{sec:experiments} we evaluate the models on five datasets, before summarising and suggesting directions for future work in \autoref{sec:summary}. 
 
 \section{The Proposed Models}
 \label{sec:models}
 \subsection{Bilinear model}
-Our first model is a simplistic adaptation of the \skipgram\ model introduced by \citet{mik2013} to the many-hot case. Here, we replace the last softmax layer in \skipgram\ by a sigmoid layer with $N$ outputs, to predict each note individually.  
+Our first model is a simplistic adaptation of the \skipgram\ model introduced by \citet{mik2013} to the many-hot case. In that work, \textit{negative sampling} was used to reduce the computational burden of the softmax. Given that there are an exponential number $2^N$ of possible chords, we choose a different approach. In particular, we simply replace the last softmax layer in \skipgram\ by a sigmoid layer with $N$ outputs, thereby separately predicting each note in the chord.  
 
 The architecture is a feed forward neural network consisting of input, hidden and output layers. At the input layer, a chord is encoded using a fixed length binary vector $\nolinebreak{\boldc = \{c_1, c_2, \ldots, c_N\}\in \{0,1\}^N}$, where $N$ is the number of notes in the vocabulary. In this chord representation, the entries that are set to $1$ correspond to the notes that are \textit{on} in the chord, whereas the notes that are \textit{off} are set to $0$. 
 
@@ -220,17 +220,17 @@ where $\M_{(:,i)}$ denotes the $i$'th row of $\M$. We then model the required co
 p(c_i =1|\boldd) = \sigma\big( h(i,\boldd) \big),
 \end{equation}
 where $\sigma(x)=1/(1+\exp(-x))$ is the usual sigmoid function.
-This model is not expected to perform well, mainly because of the independence assumption between the notes in a chord. In fact, it is very likely that there is a strong dependency between the notes appearing in a chord. In the next section, we introduce a model that does not make such an independence assumption. 
+This model is not expected to perform well, mainly because of the independence assumption between the notes in a chord. In reality, there are strong dependencies between the notes appearing in a given chord. In the next section, we introduce a model that does not make such an independence assumption. 
 
 \subsection{Autoregressive model}
 
-To overcome the necessity of making the independence assumption between the notes appearing in a chord while retaining tractability, we introduce another model inspired by the The Neural Autoregressive Distribution Estimator (NADE) which models the distribution of high-dimensional vectors of discrete variables \citep{larochelle2011}. We decompose the context chord probability distribution according to the chain rule, so that
+To overcome the necessity of making the independence assumption between the notes appearing in a chord while retaining tractability, we introduce another model inspired by the the Neural Autoregressive Distribution Estimator (NADE) which models the distribution of high-dimensional vectors of discrete variables \citep{larochelle2011}. We decompose the context chord probability distribution according to the chain rule, so that
 %
 \begin{equation}
 p(\boldc =\boldc' | \boldd) = \prod_{i=1}^N  p(c_i =c_i'|  \boldd, c_{<i}) \,,
 \end{equation} 
 %
-where $c_{<i} = \{c_1, \ldots, c_{i-1}\}$. We define a new scoring function
+where $c_{<i} = \{c_1, \ldots, c_{i-1}\}$. Note that this completely relaxes the independence assumption, as the above equation is always valid. We define a new scoring function
 %
 \begin{equation}
 h(i,\boldd,c_{<i}) =  W_{:,i} \cdot (\boldvd + \boldvci) \,,
@@ -250,14 +250,14 @@ As before we let
 \begin{equation}
 p(c_i =1|\boldd) = \sigma\big( h(i,\boldd,c_{<i}) \big).
 \end{equation}
-Hence, like NADE we retain tractability while relaxing the conditional independence assumption.
+% Hence, like NADE we retain tractability while relaxing the conditional independence assumption.
+While the above model is an improvement, it still imposes strong simplifying assumptions.
 %
 \subsection{Sequence-to-sequence model}
 %
-Finally, we propose to adapt the famous \seqtoseq\ model \citep{SutskeverVL14} to the task of learning chord embeddings. In language models, RNNs are useful for predicting future elements of a sequence given prior elements. The \seqtoseq\ model builds on top of language models  to create translation models that operate on two sequences -- the input sequence and the translated output sequence. It looks at each element of the sequence and tries to sequentially predict the next elements of the output sequence. We then suggest to train a \seqtoseq\ model to predict the elements in the temporally neighboring chords given an input chords.    
-In this setting, a chord $c$ is represented as an (arbitrary length) ordered sequence of notes, so that $c_i\leq c_{i+1}\in\left\{1,2,\dots,N\right\}$.
+Finally, we propose to adapt the famous \seqtoseq\ model \citep{SutskeverVL14} to the task of learning chord embeddings. In language models, RNNs are useful for predicting future elements of a sequence given prior elements. The \seqtoseq\ model builds on top of this idea to create models that map from one sequence to another -- for example an input sequence and a translation of that sentence into a different language. It looks at each element of the sequence and tries to sequentially predict the next elements of the output sequence. 
 
-Appropriately, \seqtoseq\ models learn a mapping of input sequences of varying lengths to output sequences also of varying lengths, using a neural network architecture known as an RNN Encoder-Decoder. 
+In detail, \seqtoseq\ models learn a mapping of input sequences of varying lengths to output sequences also of varying lengths, using a neural network architecture known as an RNN Encoder-Decoder. 
 %\begin{figure}[ht]
 %\centering
 %\includegraphics[width=1.0\linewidth]{figures/seq2seq.png}
@@ -289,7 +289,10 @@ p(y_1,\ldots,y_{T'} | x_1, \ldots, x_T,\theta) = \prod_{t=1}^{T'} p(y_t|\boldsym
 % The sequence-to-sequence model can be used to learn embeddings for chords, by training the model to learn the context of a given chord. 
 %
 % At the chord level, the encoder projects all notes in a chord into a joint note representation and a decoder generates all notes in a chord given a chord representation and previously generated notes.
-In our setting, we form the $\boldsymbol{y}$ by concatenating elements of the neighbourhood chords. We appropriately insert a special symbol (say, $\epsilon$) which serves as an end of chord marker (similar to an end of sentence marker in NLP). For example, if $\boldd=\boldc_i=(60,64,67)$ and the neighbourhood consists of chords $\boldc_{i-1}=(59)$ and $\boldc_{i+1}=(62,65,69)$, then we have $\boldx=(60,62,67)$ as our input sequence $\boldy=(59,\epsilon,62,65,69,\epsilon)$ as our output sequence. We take the corresponding $\boldsymbol{v}$ as the embedding for $\boldd$.
+To apply this to our problem, rather than thinking of chords as binary indicator vectors, we think of them as sequences of constituent notes. That is, a chord $c$ is represented as an (arbitrary length) ordered sequence of notes, so that $c_i\leq c_{i+1}\in\left\{1,2,\dots,N\right\}$. Note that the ordering is important, but as long as we order our data consistently, any order is technically valid. Indeed, a similar ordering issue arises in our model of the previous sub-section, as well as the NADE architecture which it is inspired by.
+
+To learn an embedding, we train a \seqtoseq\ model to predict the elements in the temporally neighboring chords given the chord within that neighborhood as input.
+Relating this to the \seqtoseq\ model, we form the $\boldsymbol{y}$ by concatenating elements of the neighbourhood chords. We appropriately insert a special symbol (say, $\epsilon$) which serves as an end of chord marker (similar to an end of sentence marker in NLP). For example, if $\boldd=\boldc_i=(60,64,67)$ and the neighbourhood consists of chords $\boldc_{i-1}=(59)$ and $\boldc_{i+1}=(62,65,69)$, then we have $\boldx=(60,62,67)$ as our input sequence $\boldy=(59,\epsilon,62,65,69,\epsilon)$ as our output sequence. We take the corresponding $\boldsymbol{v}$ as the embedding for $\boldd$.
 % indicating the end of the first chord. The goal then is to estimate
 % $
 % p(c_1, \ldots, c_T | d_1,\ldots,d_{T'})\,,
@@ -324,10 +327,10 @@ We consider five datasets of varying complexity, taken from \cite{bl}:
 %\item[] \textbf{Piano-midi.de}: classical piano MIDI archive split according to \citet{poliner2007discriminative}
 %\item[] \textbf{Mix}: a collection of all above datasets.
 %\end{itemize}
-The polyphony varies from 0 to 15 and the average number of simultaneous notes is $3.9$. The range of notes spans the whole range of piano from A0 to C8, \ie\ $N = |\N| = 88$. We also augmented the training data as follows: we transpose each piece by $\phi$ semi-tones, for $\phi = -6, -5, \dots, 4, 5.$
+The polyphony varies from 0 to 15 and the average number of simultaneous notes is $3.9$. The range of notes spans the whole range of piano from A0 to C8, \ie\ $N = |\N| = 88$. We also augmented the training data as follows: we transpose each piece by $\phi$ semi-tones, for $\phi = -6, -5, \dots, 4, 5.$ We use the train, test and validation splits provided by \cite{bl}.
 %
 \subsection{Baselines}
-In addition to the previously mentioned models, we compare our results with the following models. \textbf{Random} is the simplest baseline with uniform $p(c_i = c_i' | d ) = 0.5$. \textbf{Marginal} is the smoothed empirical distribution of the notes in the training data, $p(c_i = 1 | d )= \frac{z_i + \alpha}{|\T|+\alpha}$ where $z_i$ is the number of the occurrences of note $i$ in the training set and $\alpha = 1$ is the smoothing constant.
+In addition to the previously mentioned models, we compare our results with the following models, in order to gain an intuition for the explanatory power of our novel approaches. \textbf{Random} is the simplest baseline with uniform $p(c_i = c_i' | d ) = 0.5$. \textbf{Marginal} is the smoothed empirical distribution of the notes in the training data, $p(c_i = 1 | d )= \frac{z_i + \alpha}{|\T|+\alpha}$ where $z_i$ is the number of the occurrences of note $i$ in the training set and $\alpha = 1$ is the smoothing constant.
 %
 \subsubsection{Implementation Details}
 The linear \chordtovec\ model and the autoregressive \chordtovec\ were trained in batches of size 128 with  Adam Optimizer using $D = 1024$. Each model is optimized for 200 epochs, but the final model is the one leading to the lowest validation error.  
@@ -338,7 +341,7 @@ We implemented all three models using Google's Tensorflow library.
 
 \section{Results}
 
-The negative log likelihoods on the test data for all models and on all data sets are presented in Table~\ref{tab:results}. First, we observe that our simple linear model, despite the independence assumptions, is able to actually learn something beyond the marginal distribution of the training set. Secondly, as expected, we observe that the autoregressive model achieves better scores than the simple linear model on all data sets, confirming our hypothesis that the notes in a chord are not independent of each other. Lastly, it appears that the /seqtoseq/ model is by far the strongest model overall.   
+The negative log likelihoods on the test data for all models and on all data sets are presented in Table~\ref{tab:results}. First, we observe that our simple linear model, despite the independence assumptions, is able to actually learn something beyond the marginal distribution of the training set. Secondly, as expected, we observe that the autoregressive model achieves better scores than the simple linear model on all data sets, confirming our hypothesis that the notes in a chord are not independent of each other. Lastly, it appears that the \seqtoseq\ model is by far the strongest model overall in terms of average test set log likelihood.   
 %
 \begin{table}[ht]
 \centering
@@ -357,12 +360,12 @@ Seq2Seq c2v & 1.11 &  0.50 & 1.52 & 1.78 & 1.22
 %
 \section{Summary and Future work}
 \label{sec:summary}
-Our study has revealed that the /seqtoseq/ model is dramatically superior to our simpler methods. However, in the case of text classification problems, it has been shown that simpler architectures can lead to results that are comparable to deep learning models in terms of accuracy, but much faster for training and evaluation \citep{JoulinGBM16}.
+Our study has revealed that the \seqtoseq\ model is dramatically superior to our simpler methods which are inspired by bilinear \skipgram\ models. However, in the case of text classification problems, it has been shown that simpler architectures can lead to results that are comparable to deep learning models in terms of accuracy, but much faster for training and evaluation \citep{JoulinGBM16}.
 With this in mind, a direction for future work would be to develop another model based on the \skipgram\ model but without making the assumption of independence between the notes occurring in a chord. 
 
 One could also visualize the learned vectors by using dimensionality reduction techniques. An inspection of such low dimension vectors could help understanding whether the embedding vectors capture interesting musically relevant information.
 
-Another interesting direction involves combining our \seqtoseq\ based chord embedding model with an additional temporal recurrence, in order to model entire pieces of music.
+Another interesting direction involves combining our \seqtoseq\ based chord embedding model with an additional temporal recurrence, in order to model entire pieces of music. This would yield an interesting architecture with an RNN modelling arbitrary length chord sequences, combined with another RNN modelling the sequence of fixed lengths output vectors generated at each time step by the first RNN.
 
 \bibliographystyle{plainnat}
 \bibliography{bibli.bib} 
