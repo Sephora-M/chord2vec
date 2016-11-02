@@ -28,6 +28,8 @@
 \usepackage{natbib,caption}
 \usepackage{algorithm,algpseudocode}
 \usepackage{parnotes,float,multicol}
+\usepackage{booktabs}
+
 \usetikzlibrary{positioning}
 \newcolumntype{?}{!{\vrule width 1pt}}
 \newcommand{\R}{\mathbb{R}}
@@ -208,14 +210,6 @@ Using weights matrices $M$ and $\M$, we define a scoring function $\nobreak{h: \
 h(i,\boldd) =  \M_{(:,i)} \boldvd \,,
 \end{equation}
 where $\M_{(:,i)}$ denotes the $i$'th row of $\M$. We then model the required conditional probabilities as
-% \begin{equation}
-% p(c_i =c_i'|  \boldd) = \left\{
-%                 \begin{array}{lll}
-%                   \sigma\big( h(i,\boldd) \big) = \frac{\exp(h(i,\boldd))}{1 + \exp(h(i,\boldd))} & c_i' = 1 \\
-%                   1- \sigma\big( h(i,\boldd) \big) = \sigma\big( - h(i,\boldd) \big) = \frac{1}{1 + \exp(h(i,\boldd))} & c_i' = 0\\
-%                 \end{array}
-%               \right.
-% \end{equation}
 \begin{equation}
 p(c_i =1|\boldd) = \sigma\big( h(i,\boldd) \big),
 \end{equation}
@@ -238,15 +232,6 @@ h(i,\boldd,c_{<i}) =  W_{:,i} \cdot (\boldvd + \boldvci) \,,
 %
 where $M, L \in \R^{D \times N}$ and $W\in \R^{N \times D}$ are weight matrices, $\boldvci=\sum_{j<i}  L_{:,j} c_j$ and $\boldvd = M\frac{ \boldd}{\| \boldd \|_1}$ is the D-dimensional vector representation of our chord.
 As before we let
-%
-% \begin{equation}
-% p(c_i =c_i'|  \boldd, c_{<i}) = \left\{
-%                 \begin{array}{lll}
-%                   \sigma\big( W_{:,i} \cdot (\boldvd + \boldvci) \big)  & c_i' = 1 \\
-%                   1- \sigma\big( W_{:,i} \cdot (\boldvd + \boldvci) \big)  & c_i' = 0\\
-%                 \end{array}
-%               \right.
-% \end{equation}
 \begin{equation}
 p(c_i =1|\boldd) = \sigma\big( h(i,\boldd,c_{<i}) \big).
 \end{equation}
@@ -346,14 +331,14 @@ The negative log likelihoods on the test data for all models and on all data set
 \begin{table}[ht]
 \centering
 \caption{Average negative log likelihood per chord for the test set.}
-\begin{tabular}{l?lllll}
-\hline
-Model   & JSB Chorales & Nottingham & MuseData & Piano-midi.de & Mix \\ \hline
-Random & 61.00 & 60.99 & 60.99 & 60.99 & 60.99\\ 
-Marginal & 12.23 & 10.44 & 23.75 & 17.36 & 15.26 \\ 
-Linear c2v & 9.77 & 5.76 & 15.41 &12.68 & 12.17  \\ 
-Autoreg. c2v & 6.18 & 3.98 &14.49 & 10.18 & 7.42 \\ 
-Seq2Seq c2v & 1.11 &  0.50 & 1.52 & 1.78 & 1.22 
+\begin{tabular}{llllll}
+\toprule
+Model  & JSB Chorales & Nottingham & MuseData & Piano-midi.de & Mix \\ \midrule
+Random & \texttt{61.00} & \texttt{60.99} & \texttt{60.99} & \texttt{60.99} & \texttt{60.99} \\ 
+Marginal & \texttt{12.23} & \texttt{10.44} & \texttt{23.75} & \texttt{17.36} & \texttt{15.26} \\ 
+Linear c2v & \texttt{~9.77} & \texttt{~5.76} & \texttt{15.41} & \texttt{12.68} & \texttt{12.17}  \\ 
+Autoreg. c2v & \texttt{~6.18} & \texttt{~3.98} & \texttt{14.49} & \texttt{10.18} & \texttt{~7.42} \\ 
+Seq2Seq c2v & \texttt{~1.11} & \texttt{~0.50} & \texttt{~1.52} & \texttt{~1.78} & \texttt{~1.22} 
 \label{tab:results}
 \end{tabular}
 \end{table}
