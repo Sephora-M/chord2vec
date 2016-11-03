@@ -50,8 +50,6 @@
 \newcommand{\boldy}{\boldsymbol y}
 \newcommand{\boldx}{\boldsymbol x}
 
-
-
 \title{Chord2Vec: Learning  Musical Chord Embeddings}
 
 % The \author macro works with any number of authors. There are two
@@ -65,31 +63,18 @@
 % author name.
 
 \author{
-   Coauthor1 \\
-   Affiliation \\
-   Address \\
-   \texttt{email} \\
+   Sephora Madjiheurem \\
+   \'Ecole Polytechnique F\'ed\'erale de Lausanne, Switzerland \\
+   \texttt{sephora.madjiheurem@epfl.ch} \\
   %% examples of more authors
+   \AND
+   Lizhen Qu \\
+   Data61, ACT 2601, Australia \\
+   \texttt{lizhen.qu@data61.csiro.au} \\
    \And
-   Coauthor2 \\
-   Affiliation \\
-   Address \\
-   \texttt{email} \\
-   \And
-   Coauthor3 \\
-   Affiliation \\
-   Address \\
-   \texttt{email} \\
-%%  \And
-%%   Coauthor \\
-%%   Affiliation \\
-%%   Address \\
-%%   \texttt{email} \\
-  %% \And
-  %% Coauthor \\
-  %% Affiliation \\
-  %% Address \\
-  %% \texttt{email} \\
+   Christian Walder \\
+   Data61, ACT 2601, Australia \\
+   \texttt{christian.walder@data61.csiro.au} \\
 }
 
 \newcommand{\skipgram}{\textit{Skip-gram}}
@@ -110,7 +95,9 @@
 
 \section{Introduction}
 
-The \wordtovec\ model by \citet{mik2013} learns vector representations of words that carry syntactic and semantic information. These representations have proven powerful in various natural language processing (NLP) tasks. In this work, we investigate whether similar embeddings can be found for symbolic music data. % The main goal of this study is to introduce techniques that can be used for learning high-quality embedding chord vectors from sequences of polyphonic music. 
+The \wordtovec\ model by \citet{mik2013} learns vector representations of words that carry syntactic and semantic information. Such word embeddings have proven powerful in various natural language processing (NLP) tasks, in particular in sequence modelling \citep{Cho, SutskeverVL14}. 
+In this work, we investigate whether similar embeddings can be found for symbolic music data. Since sequence modelling can be used for algorithmic composition \cite{bl}, high-quality chord embeddings could help advance algorithmic music composition. 
+We refer to these novel models as \chordtovec . % The main goal of this study is to introduce techniques that can be used for learning high-quality embedding chord vectors from sequences of polyphonic music. 
 
 In the spirit of the \skipgram\ model \citep{mik2013}, the heuristic we use to achieve this involves finding chord representations that are useful for predicting the temporally neighboring chords in our corpus of musical pieces. Given such a corpus of ordered musical chords  $\T = \{\boldd_1, \boldd_2, \ldots, \boldd_T\}$ and a neighborhood of size $2j$ defined by $ C(\boldd_t) = \{\boldd_{t+j}, -m \leq j \leq m , j \neq 0\}$, the objective is to maximize the average log probability with respect to some model parameters~$\theta$:
 %
@@ -345,10 +332,11 @@ Seq2Seq c2v & \texttt{~1.11} & \texttt{~0.50} & \texttt{~1.52} & \texttt{~1.78} 
 %
 \section{Summary and Future work}
 \label{sec:summary}
+In this work, we introduced three NLP inspired models that learn vector representations of musical chords.
 Our study has revealed that the \seqtoseq\ model is dramatically superior to our simpler methods which are inspired by bilinear \skipgram\ models. However, in the case of text classification problems, it has been shown that simpler architectures can lead to results that are comparable to deep learning models in terms of accuracy, but much faster for training and evaluation \citep{JoulinGBM16}.
 With this in mind, a direction for future work would be to develop another model based on the \skipgram\ model but without making the assumption of independence between the notes occurring in a chord. 
 
-One could also visualize the learned vectors by using dimensionality reduction techniques. An inspection of such low dimension vectors could help understanding whether the embedding vectors capture interesting musically relevant information.
+Our encouraging results are a motivation to visualize the learned vectors by using dimensionality reduction techniques. An inspection of such low dimension vectors could help understanding whether the embedding vectors capture interesting musically relevant information.
 
 Another interesting direction involves combining our \seqtoseq\ based chord embedding model with an additional temporal recurrence, in order to model entire pieces of music. This would yield an interesting architecture with an RNN modelling arbitrary length chord sequences, combined with another RNN modelling the sequence of fixed lengths output vectors generated at each time step by the first RNN.
 

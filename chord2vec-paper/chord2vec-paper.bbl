@@ -1,4 +1,4 @@
-\begin{thebibliography}{7}
+\begin{thebibliography}{8}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -10,12 +10,26 @@ Moray Allan and Christopher~KI Williams.
 \newblock Harmonising chorales by probabilistic inference.
 \newblock 2005.
 
-\bibitem[Boulanger-Lewandowski et~al.(2012)Boulanger-Lewandowski, Bengio, and
+\bibitem[Boulanger-lewandowski et~al.(2012)Boulanger-lewandowski, Bengio, and
   Vincent]{bl}
-Nicolas Boulanger-Lewandowski, Yoshua Bengio, and Pascal Vincent.
+Nicolas Boulanger-lewandowski, Yoshua Bengio, and Pascal Vincent.
 \newblock Modeling temporal dependencies in high-dimensional sequences:
   Application to polyphonic music generation and transcription.
-\newblock 2012.
+\newblock In John Langford and Joelle Pineau, editors, \emph{Proceedings of the
+  29th International Conference on Machine Learning (ICML-12)}, pages
+  1159--1166, New York, NY, USA, 2012. ACM.
+\newblock URL \url{http://icml.cc/2012/papers/590.pdf}.
+
+\bibitem[Cho et~al.(2014)Cho, Van~Merri{\"{e}}nboer, G{\"{u}}l{\c c}ehre,
+  Bahdanau, Bougares, Schwenk, and Bengio]{Cho}
+Kyunghyun Cho, Bart Van~Merri{\"{e}}nboer, {\c C}ağlar G{\"{u}}l{\c c}ehre,
+  Dzmitry Bahdanau, Fethi Bougares, Holger Schwenk, and Yoshua Bengio.
+\newblock Learning phrase representations using rnn encoder--decoder for
+  statistical machine translation.
+\newblock In \emph{Proceedings of the 2014 Conference on Empirical Methods in
+  Natural Language Processing (EMNLP)}, pages 1724--1734, Doha, Qatar, October
+  2014. Association for Computational Linguistics.
+\newblock URL \url{http://www.aclweb.org/anthology/D14-1179}.
 
 \bibitem[Joulin et~al.(2016)Joulin, Grave, Bojanowski, and
   Mikolov]{JoulinGBM16}
