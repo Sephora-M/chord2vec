@@ -96,8 +96,7 @@
 \section{Introduction}
 
 The \wordtovec\ model by \citet{mik2013} learns vector representations of words that carry syntactic and semantic information. Such word embeddings have proven powerful in various natural language processing (NLP) tasks, in particular in sequence modelling \citep{Cho, SutskeverVL14}. 
-In this work, we investigate whether similar embeddings can be found for symbolic music data. Since sequence modelling can be used for algorithmic composition \cite{bl}, high-quality chord embeddings could help advance algorithmic music composition. 
-We refer to these novel models as \chordtovec . % The main goal of this study is to introduce techniques that can be used for learning high-quality embedding chord vectors from sequences of polyphonic music. 
+Since sequence modelling can be used for algorithmic composition \citep{bl}, high-quality chord embeddings could help advance algorithmic music composition. Hence, in this work, we investigate whether embeddings similar to \wordtovec\ can be found for symbolic music data. We propose three NLP inspired models to learn vector representations of chords. We refer to these novel models as \chordtovec . % The main goal of this study is to introduce techniques that can be used for learning high-quality embedding chord vectors from sequences of polyphonic music. 
 
 In the spirit of the \skipgram\ model \citep{mik2013}, the heuristic we use to achieve this involves finding chord representations that are useful for predicting the temporally neighboring chords in our corpus of musical pieces. Given such a corpus of ordered musical chords  $\T = \{\boldd_1, \boldd_2, \ldots, \boldd_T\}$ and a neighborhood of size $2j$ defined by $ C(\boldd_t) = \{\boldd_{t+j}, -m \leq j \leq m , j \neq 0\}$, the objective is to maximize the average log probability with respect to some model parameters~$\theta$:
 %
